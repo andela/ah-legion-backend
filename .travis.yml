@@ -9,7 +9,10 @@ install:
   - pip install coverage
 
 # command to run tests
+
 script: 
+  - python manage.py makemigrations --settings=authors.settings.test
+  - python manage.py migrate --settings=authors.settings.test 
   - coverage run --source=authors.apps ./manage.py test --settings=authors.settings.test
   - coverage
     
