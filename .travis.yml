@@ -1,0 +1,18 @@
+language: python
+python:
+  - "3.6"
+  
+# command to install dependencies
+install:
+  - pip install -r requirements.txt
+  - pip install coveralls
+  - pip install coverage
+
+# command to run tests
+script: 
+  - coverage run --source=authors.apps ./manage.py test --settings=authors.settings.test
+  - coverage
+    
+after_success:
+  - coverallslanguage: python
+  - coveralls
