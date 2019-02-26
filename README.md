@@ -5,7 +5,34 @@ Authors Haven - A Social platform for the creative at heart.
 Create a community of like minded authors to foster inspiration and innovation
 by leveraging the modern web.
 
----
+## Running the app.
+Authors Haven app can by:
+### STEP 1:
+    Git clone this repository: `git clone https://github.com/andela/ah-legion-backend.git`
+
+### STEP 2: 
+    Change your working directory to the app's root. `cd ah-legion-backend`
+
+### STEP 3:
+    Create a virtual environment and activate it.
+    Install all the requirements by running `pip install -r requirements.txt`
+    Create an environment file with environment variables in the following format:
+  
+      SECRET_KEY=supersecretkey
+      DEBUG=True
+      DB_NAME=yourdbname
+      DB_USER=yourname
+      DB_PASSWORD=yourstrongpassword
+      DB_HOST=127.0.0.1
+
+### STEP 4:
+    Run the app according to the environment you need:
+
+   #### Development environment:
+    `python manage.py runserver --settings=authors.settings.dev`
+
+   #### Testing environment:
+    `python manage.py test --settings=authors.settings.test`
 
 ## API Spec
 The preferred JSON object to be returned by the API should be structured as follows:
@@ -390,7 +417,3 @@ No additional parameters required
 ### Get Tags
 
 `GET /api/tags`
-
-
-
-
