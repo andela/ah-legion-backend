@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/andela/ah-legion-backend.svg?branch=master)](https://travis-ci.org/andela/ah-legion-backend.svg?branch=develop)
+[![Coverage Status](https://coveralls.io/repos/github/andela/ah-legion-backend/badge.svg?branch=develop)](https://coveralls.io/github/andela/ah-legion-backend?branch=develop)
+
 Authors Haven - A Social platform for the creative at heart.
 =======
 
