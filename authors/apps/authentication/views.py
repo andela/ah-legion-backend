@@ -10,6 +10,10 @@ from .serializers import (LoginSerializer, RegistrationSerializer,
 
 
 class RegistrationAPIView(APIView):
+    """
+    post:
+        Register a new user by creating a new user instance.
+    """
     # Allow any user (authenticated or not) to hit this endpoint.
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
@@ -29,6 +33,10 @@ class RegistrationAPIView(APIView):
 
 
 class LoginAPIView(APIView):
+    """
+    post:
+        Login an exising user
+    """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = LoginSerializer
@@ -47,6 +55,16 @@ class LoginAPIView(APIView):
 
 
 class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+    """
+    get:
+        Retrieve details of a user
+
+    put:
+        Update all details of a user
+
+    patch:
+        Update a single detail of a user
+    """
     permission_classes = (IsAuthenticated,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = UserSerializer
@@ -71,3 +89,4 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+

@@ -16,9 +16,13 @@ Including another URLconf
 from django.urls import include, path
 from django.contrib import admin
 
+from rest_framework.documentation import include_docs_urls
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('authors.apps.authentication.urls',
                          namespace='authentication')),
+    path('docs/', include_docs_urls(title="Legion: Author's Haven"))
 ]
+
