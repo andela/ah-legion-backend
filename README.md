@@ -34,6 +34,10 @@ Authors Haven app can be run by:
     Run the app according to the environment you need:
 
    #### Development environment:
+    `python manage.py makemigrations --settings=authors.settings.dev`
+
+    `python manage.py migrate --settings=authors.settings.dev`
+
     `python manage.py runserver --settings=authors.settings.dev`
 
    #### Testing environment:
