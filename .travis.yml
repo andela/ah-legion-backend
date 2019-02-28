@@ -23,6 +23,7 @@ script:
 after_script:
   - coverage xml
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - find ./authors/ -name \*.py -exec flake8 -v {} +
     
 after_success:
   - coverallslanguage: python
