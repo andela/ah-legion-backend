@@ -1,0 +1,4 @@
+[flake8]
+ignore = W3921
+max-line-length = 80
+exclude = */tests/* */settings/*
