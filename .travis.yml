@@ -1,20 +1,28 @@
 language: python
 python:
   - "3.6"
-  
+env:
+  - CC_TEST_REPORTER_ID=e57a22b35edfb81a9ce33540af45efd1cb9ee44db2a020caa06f4477cf47dc82 
 # command to install dependencies
 install:
   - pip install -r requirements.txt
   - pip install coveralls
   - pip install coverage
 
-# command to run tests
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 
+# command to run tests
 script: 
   - python manage.py makemigrations --settings=authors.settings.test
   - python manage.py migrate --settings=authors.settings.test 
   - coverage run --source=authors.apps ./manage.py test --settings=authors.settings.test
-  - coverage
+
+after_script:
+  - coverage xml
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
     
 after_success:
   - coverallslanguage: python
