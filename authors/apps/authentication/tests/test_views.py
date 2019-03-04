@@ -50,8 +50,10 @@ class UserRetrieveUpdateAPITest(TestCase):
             }
         client = APIClient()
         client.post(reverse('authentication:register'), user1, format='json')
-        client.login(email="user1@mail.com", password="password")
-        response = client.get(reverse('authentication:get users'))
+        login_data = client.post(reverse('authentication:login'), {'user':{"email": "user1@mail.com", "password":"password"}}, format='json')
+        token = login_data.data['token']
+        headers = {'HTTP_AUTHORIZATION': f'Bearer {token}'}
+        response = client.get(reverse('authentication:get users'), **headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_if_we_can_update_user_data(self):
@@ -69,6 +71,8 @@ class UserRetrieveUpdateAPITest(TestCase):
         }}
         client = APIClient()
         client.post(reverse('authentication:register'), user1, format='json')
-        client.login(email="user1@mail.com", password="password")
-        response = client.put(reverse('authentication:get users'), update_info, format='json')
+        login_data = client.post(reverse('authentication:login'), {'user':{"email": "user1@mail.com", "password":"password"}}, format='json')
+        token = login_data.data['token']
+        headers = {'HTTP_AUTHORIZATION': f'Bearer {token}'}
+        response = client.put(reverse('authentication:get users'), **headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
