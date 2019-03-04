@@ -70,7 +70,8 @@ class LoginSerializerTests(TestCase):
         returned_user_data = serializer.validate(login_data)
         self.assertEqual({
             "email": "bob@email.com",
-            "username": "bob"},
+            "username": "bob",
+            'token': user.token},
             returned_user_data
         )
 

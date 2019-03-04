@@ -1,3 +1,8 @@
+from datetime import datetime, timedelta
+
+import jwt
+
+from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
                                         PermissionsMixin)
 from django.db import models
@@ -111,3 +116,28 @@ class User(AbstractBaseUser, PermissionsMixin):
         the user's real name, we return their username instead.
         """
         return self.username
+
+    @property
+    def token(self):
+        """
+        We need to make the method for creating our token private. At the
+        same time, it's more convenient for us to access our token with
+        `user.token` and so we make the token a dynamic property by wrapping
+        in in the `@property` decorator.
+        """
+        return self._generate_jwt_token()
+
+    def _generate_jwt_token(self):
+        """
+        We generate JWT token and add the user id, username and expiration
+        as an integer.
+        """
+        dt = datetime.now() + timedelta(hours=2)
+
+        token = jwt.encode({
+            'id': self.pk,
+            'username': self.get_full_name,
+            'exp': int(dt.strftime('%s'))
+        }, settings.SECRET_KEY, algorithm='HS256')
+
+        return token.decode('utf-8')

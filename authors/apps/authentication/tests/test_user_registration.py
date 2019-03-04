@@ -15,11 +15,11 @@ class RegistrationTestCase(APITestCase):
                 "password": "Mary1234"
             }
         }
-        signup_data_response = {
-            "email": "mary@gmail.com", "username": "Mary"
-        }
 
         response = self.client.post(self.url, signup_data, format='json')
+        signup_data_response = {
+            "email": "mary@gmail.com", "username": "Mary", "token": response.data['token']
+        }
         self.assertEqual(response.data, signup_data_response)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
