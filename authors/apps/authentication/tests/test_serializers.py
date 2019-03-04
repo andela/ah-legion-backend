@@ -102,3 +102,4 @@ class UserSerializersTests(TestCase):
         self.assertEqual(updated_user.username, "robert")
         self.assertEqual(updated_user.email, "robert@email.com")
         self.assertEqual(updated_user.password, user_password)
+

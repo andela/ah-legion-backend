@@ -1,6 +1,7 @@
 [run]
 include = ./*
 omit =
+   *env*
    *migrations*
    *tests*
    manage.py
