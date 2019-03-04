@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/andela/ah-legion-backend.svg?branch=master)](https://travis-ci.org/andela/ah-legion-backend.svg?branch=develop)
+[![Build Status](https://travis-ci.com/andela/ah-legion-backend.svg?branch=develop)](https://travis-ci.com/andela/ah-legion-backend)
 [![Coverage Status](https://coveralls.io/repos/github/andela/ah-legion-backend/badge.svg?branch=develop)](https://coveralls.io/github/andela/ah-legion-backend?branch=develop)
 [![Maintainability](https://api.codeclimate.com/v1/badges/72c25fc53cfdf26f49d7/maintainability)](https://codeclimate.com/github/andela/ah-legion-backend/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/72c25fc53cfdf26f49d7/test_coverage)](https://codeclimate.com/github/andela/ah-legion-backend/test_coverage)
