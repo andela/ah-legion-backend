@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
-
+from django.core.validators import RegexValidator
 from rest_framework import serializers
-
+from rest_framework.validators import UniqueValidator
 from .models import User
 
 
@@ -13,7 +13,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=128,
         min_length=8,
-        write_only=True
+        write_only=True,
+        required=True,
+        validators=[RegexValidator(
+            regex='^[a-zA-Z0-9]*$',
+            message='Password should be alphanumeric',
+            code='invalid_password')],
+        error_messages={
+            'min_length': 'Password should be at least 8 characters long',
+            'max_length': 'Password should not be longer than 128 characters',
+            'blank': 'Password field cannot be blank',
+            'required': 'Password is required'
+
+        }
     )
 
     # The client should not be able to send a token along with a registration
@@ -24,6 +36,31 @@ class RegistrationSerializer(serializers.ModelSerializer):
         # List all of the fields that could possibly be included in a request
         # or response, including fields specified explicitly above.
         fields = ['email', 'username', 'password']
+        extra_kwargs = {
+            'email': {
+                'error_messages': {
+                    'required': 'Email is required',
+                    'blank': 'Email field cannot be blank',
+                    'invalid': 'Please enter a valid email address'
+                },
+                'validators': [
+                    UniqueValidator(queryset=User.objects.all(),
+                                    message='A user with this '
+                                            'email already exists')]
+
+            },
+            'username': {
+                'error_messages': {
+                    'required': 'Username is required',
+                    'blank': 'Username field cannot be blank'},
+                'validators': [
+                    UniqueValidator(queryset=User.objects.all(),
+                                    message='A user with this '
+                                            'username already exists')]
+
+            }
+
+        }
 
     def create(self, validated_data):
         # Use the `create_user` method we wrote earlier to create a new user.
