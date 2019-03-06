@@ -49,7 +49,7 @@ class JWTAuthenticationTest(TestCase):
         headers = {'HTTP_AUTHORIZATION': f'Bearer {fake_token}'}
         res = self.client.get(reverse('authentication:get users'), **headers)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(res.data['detail'], 'Ivalid token provided. Authentication failure.')
+        self.assertEqual(res.data['detail'], 'Invalid token provided. Authentication failure.')
 
     def test_failure_if_user_does_not_exist(self):
         """We register a user to get the token, then delete the user from the database. When a user tries to pass the token to access the endpoint, they should be forbidden from proceeding."""

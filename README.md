@@ -339,7 +339,7 @@ No authentication required, will return single article
 
 ### Create Article
 
-`POST /api/articles`
+`POST /api/articles/create`
 
 Example request body:
 
@@ -362,7 +362,7 @@ Optional fields: `tagList` as an array of Strings
 
 ### Update Article
 
-`PUT /api/articles/:slug`
+`PUT /api/articles/:slug/edit`
 
 Example request body:
 
@@ -382,7 +382,13 @@ The `slug` also gets updated when the `title` is changed
 
 ### Delete Article
 
-`DELETE /api/articles/:slug`
+`DELETE /api/articles/:slug/edit`
+
+Authentication required
+
+### Pubish Article
+
+`PATCH /api/articles/:slug/edit`
 
 Authentication required
 

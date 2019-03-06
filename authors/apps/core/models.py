@@ -6,3 +6,6 @@ class TimeStampModel(models.Model):
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(
         _('updated at'), auto_now_add=False, auto_now=True)
+
+    class Meta:
+        abstract = True
