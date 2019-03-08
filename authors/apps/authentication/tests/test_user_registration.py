@@ -36,7 +36,8 @@ class RegistrationTestCase(APITestCase):
             "username": ["Username field cannot be blank"]
         }
         }
-        response = self.client.post(self.url, blank_username_data, format='json')
+        response = self.client.post(
+            self.url, blank_username_data, format='json')
         self.assertEqual(response.data, blank_username_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -52,7 +53,8 @@ class RegistrationTestCase(APITestCase):
             "username": ["Username is required"]
         }
         }
-        response = self.client.post(self.url, no_username_field_data, format='json')
+        response = self.client.post(
+            self.url, no_username_field_data, format='json')
         self.assertEqual(response.data, no_username_field_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -77,7 +79,8 @@ class RegistrationTestCase(APITestCase):
         }
         }
         self.client.post(self.url, username_data, format='json')
-        response = self.client.post(self.url, existing_username_data, format='json')
+        response = self.client.post(
+            self.url, existing_username_data, format='json')
         self.assertEqual(response.data, existing_username_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -110,7 +113,8 @@ class RegistrationTestCase(APITestCase):
             "email": ["Email is required"]
         }
         }
-        response = self.client.post(self.url, no_email_field_data, format='json')
+        response = self.client.post(
+            self.url, no_email_field_data, format='json')
         self.assertEqual(response.data, no_email_field_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -152,7 +156,8 @@ class RegistrationTestCase(APITestCase):
         }
         }
         self.client.post(self.url, email_data, format='json')
-        response = self.client.post(self.url, existing_email_data, format='json')
+        response = self.client.post(
+            self.url, existing_email_data, format='json')
         self.assertEqual(response.data, existing_email_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -169,7 +174,8 @@ class RegistrationTestCase(APITestCase):
             "password": ["Password field cannot be blank"]
         }
         }
-        response = self.client.post(self.url, blank_password_data, format='json')
+        response = self.client.post(
+            self.url, blank_password_data, format='json')
         self.assertEqual(response.data, blank_password_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -185,7 +191,8 @@ class RegistrationTestCase(APITestCase):
             "password": ["Password is required"]
         }
         }
-        response = self.client.post(self.url, no_password_field_data, format='json')
+        response = self.client.post(
+            self.url, no_password_field_data, format='json')
         self.assertEqual(response.data, no_password_field_data_response)
 
     def test_not_alphanumeric_password(self):
@@ -201,7 +208,8 @@ class RegistrationTestCase(APITestCase):
             "password": ["Password should be alphanumeric"]
         }
         }
-        response = self.client.post(self.url, not_alphanumeric_password_data, format='json')
+        response = self.client.post(
+            self.url, not_alphanumeric_password_data, format='json')
         self.assertEqual(response.data, not_alphanumeric_password_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -218,7 +226,8 @@ class RegistrationTestCase(APITestCase):
             "password": ["Password should be at least 8 characters long"]
         }
         }
-        response = self.client.post(self.url, not_alphanumeric_password_data, format='json')
+        response = self.client.post(
+            self.url, not_alphanumeric_password_data, format='json')
         self.assertEqual(response.data, not_alphanumeric_password_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -235,6 +244,7 @@ class RegistrationTestCase(APITestCase):
             "password": ["Password should not be longer than 128 characters"]
         }
         }
-        response = self.client.post(self.url, not_alphanumeric_password_data, format='json')
+        response = self.client.post(
+            self.url, not_alphanumeric_password_data, format='json')
         self.assertEqual(response.data, not_alphanumeric_password_data_response)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

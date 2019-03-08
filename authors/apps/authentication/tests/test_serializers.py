@@ -10,6 +10,7 @@ from authors.apps.authentication.serializers import (LoginSerializer,
 
 class RegistrationSerializerTests(TestCase):
     """This class defines tests for the RegistrationSerializer class"""
+
     def setUp(self):
         self.user_data = {
             "username": "bob",
@@ -27,6 +28,7 @@ class RegistrationSerializerTests(TestCase):
 
 class LoginSerializerTests(TestCase):
     """This class defines tests for the LoginSerializer class"""
+
     def test_validating_login_serializer_without_email(self):
         """Test if users can login without providing an email"""
         login_data = {"password": "hardpassword"}
@@ -81,7 +83,7 @@ class UserSerializersTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(username="bob", email="bob@email.com",
-                                        password="hardpassword")
+                                             password="hardpassword")
         self.user.save()
         self.serializer = UserSerializer()
 

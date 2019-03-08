@@ -19,6 +19,13 @@ class UserJSONRenderer(JSONRenderer):
             return super().render(data)
 
         # Finally, we can render our data under the "user" namespace.
+        image_prefix = "https://res.cloudinary.com/dbsri2qtr/"
+        try:
+            image_suffix = data['profile']['image']
+            data['profile']['image'] = image_prefix + image_suffix
+
+        except KeyError:
+            pass
         return json.dumps({
             'user': data
         })

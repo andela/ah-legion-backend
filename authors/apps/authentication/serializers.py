@@ -3,6 +3,7 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import User
+from authors.apps.profiles.serializers import ProfileSerializer
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -137,44 +138,31 @@ class UserSerializer(serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
+    profile = ProfileSerializer()
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'token',)
-
-        # The `read_only_fields` option is an alternative for explicitly
-        # specifying the field with `read_only=True` like we did for password
-        # above. The reason we want to use `read_only_fields` here is because
-        # we don't need to specify anything else about the field. For the
-        # password field, we needed to specify the `min_length` and
-        # `max_length` properties too, but that isn't the case for the token
-        # field.
-
+        fields = ('email', 'username', 'password', 'token', 'profile',)
         read_only_fields = ('token',)
 
     def update(self, instance, validated_data):
         """Performs an update on a User."""
 
-        # Passwords should not be handled with `setattr`, unlike other fields.
-        # This is because Django provides a function that handles hashing and
-        # salting passwords, which is important for security. What that means
-        # here is that we need to remove the password field from the
-        # `validated_data` dictionary before iterating over it.
         password = validated_data.pop('password', None)
+        profile_data = validated_data.pop('profile', {})
 
         for (key, value) in validated_data.items():
-            # For the keys remaining in `validated_data`, we will set them on
-            # the current `User` instance one at a time.
             setattr(instance, key, value)
 
         if password is not None:
-            # `.set_password()` is the method mentioned above. It handles all
-            # of the security stuff that we shouldn't be concerned with.
             instance.set_password(password)
 
-        # Finally, after everything has been updated, we must explicitly save
-        # the model. It's worth pointing out that `.set_password()` does not
-        # save the model.
         instance.save()
+
+        for (key, value) in profile_data.items():
+            setattr(instance.profile, key, value)
+
+        # Save profile
+        instance.profile.save()
 
         return instance
