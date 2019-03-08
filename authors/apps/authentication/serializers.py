@@ -195,3 +195,11 @@ class UserSerializer(serializers.ModelSerializer):
         instance.profile.save()
 
         return instance
+
+
+class SocialAuthenticationSerializer(serializers.Serializer):
+    """ Holder for  provider, acces token , and access_token_secret"""
+    access_token = serializers.CharField(max_length=500, required=True)
+    access_token_secret = serializers.CharField(
+        max_length=500, allow_blank=True)
+    provider = serializers.CharField(max_length=500, required=True)

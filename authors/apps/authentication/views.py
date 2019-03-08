@@ -1,14 +1,18 @@
 from rest_framework import status
-from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from drf_yasg.utils import swagger_auto_schema
 
+from social_django.utils import load_strategy, load_backend
+from social_core.exceptions import MissingBackend
+from social_core.backends.oauth import BaseOAuth1
+
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, RegistrationSerializer,
-                          UserSerializer)
+                          UserSerializer, SocialAuthenticationSerializer)
 from .utils import validate_image
 
 
@@ -123,4 +127,56 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SocialAuthenticationView(CreateAPIView):
+    """
+    Login to the site via social authentication
+     services (Google, Twitter, Facebook)
+    """
+    permission_classes = (AllowAny,)
+    serializer_class = SocialAuthenticationSerializer
+    renderer_classes = (UserJSONRenderer,)
+
+    def create(self, request):
+        """Creates user if not present and returns an authentication token"""
+        serializer = self.serializer_class(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+        provider = serializer.data.get("provider")
+        authenticated_user = request.user if not \
+            request.user.is_anonymous else None
+        strategy = load_strategy(request)
+
+        # Load backend associated with the provider
+        try:
+
+            backend = load_backend(
+                strategy=strategy, name=provider, redirect_uri=None)
+
+            access_token = serializer.data.get("access_token")
+            if isinstance(backend, BaseOAuth1):
+                access_token = {
+                    'oauth_token': request.data['access_token'],
+                    'oauth_token_secret': request.data['access_token_secret']
+                }
+
+        except MissingBackend:
+            error_msg = """Provider not supported, Please use 'google-oauth2',
+             'facebook', or 'twitter'."""
+            return Response({"error": error_msg},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = backend.do_auth(access_token, user=authenticated_user)
+
+        except BaseException as error:
+            return Response({"error": str(error)},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        user.is_verified = True
+        user.save()
+        serializer = UserSerializer(user)
+        serializer.instance = user
         return Response(serializer.data, status=status.HTTP_200_OK)
