@@ -9,6 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, RegistrationSerializer,
                           UserSerializer)
+from .utils import validate_image
 
 
 class RegistrationAPIView(APIView):
@@ -84,12 +85,40 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
-        serializer_data = request.data.get('user', {})
+        image = self.request.data.get('image')
+
+        validate_image(image)
+
+        serializer_data = request.data
+        user_data = {
+            'username': serializer_data.get('username', request.user.username),
+            'email': serializer_data.get('email', request.user.email),
+            'profile': {
+                'first_name': serializer_data.get(
+                    'first_name', request.user.profile.last_name),
+                'last_name': serializer_data.get(
+                    'last_name', request.user.profile.last_name),
+                'birth_date': serializer_data.get(
+                    'birth_date', request.user.profile.birth_date),
+                'bio': serializer_data.get('bio', request.user.profile.bio),
+                'image': serializer_data.get(
+                    'image', request.user.profile.image),
+                'city': serializer_data.get(
+                    'city', request.user.profile.city),
+                'country': serializer_data.get(
+                    'country', request.user.profile.country),
+                'phone': serializer_data.get(
+                    'phone', request.user.profile.phone),
+                'website': serializer_data.get(
+                    'website', request.user.profile.website),
+
+            }
+        }
 
         # Here is that serialize, validate, save pattern we talked about
         # before.
         serializer = self.serializer_class(
-            request.user, data=serializer_data, partial=True
+            request.user, data=user_data, partial=True
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
