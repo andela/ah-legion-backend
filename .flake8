@@ -1,4 +1,4 @@
 [flake8]
 ignore = W391
 max-line-length = 80
-exclude = */tests/* */settings/*
+exclude = */tests/* */settings/* */migrations/*
