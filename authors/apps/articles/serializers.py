@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Article, Like
+
+from authors.apps.profiles.serializers import ProfileSerializer
+
+from .models import Article, Like, ThreadedComment
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -52,3 +55,39 @@ class LikesSerializer(serializers.ModelSerializer):
         model = Like
         fields = ('id', 'user_id', 'article_id', 'is_like')
         read_only_fields = ['id']
+
+
+class ArticleCommentInputSerializer(serializers.ModelSerializer):
+    """Seriliazes input data and creates a new article comment."""
+    class Meta:
+        model = ThreadedComment
+        fields = ('article', 'author', 'body')
+        extra_kwargs = {'article': {'required': True}}
+
+
+class CommentCommentInputSerializer(serializers.ModelSerializer):
+    """Serializes input data and creates a new comment comment."""
+    class Meta:
+        model = ThreadedComment
+        fields = ('article', 'comment', 'author', 'body')
+        extra_kwargs = {'comment': {'required': True}}
+
+
+class EmbededCommentOutputSerializer(serializers.ModelSerializer):
+    """Seriliazes comment and gives output data."""
+    author = ProfileSerializer()
+
+    class Meta:
+        model = ThreadedComment
+        fields = ('id', 'created_at', 'updated_at', 'body', 'author')
+
+
+class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
+    """Seriliazes comment and gives output data."""
+    author = ProfileSerializer()
+    comments = EmbededCommentOutputSerializer(many=True)
+
+    class Meta:
+        model = ThreadedComment
+        fields = ('id', 'created_at', 'updated_at', 'body', 'author',
+                  'comments')

@@ -7,11 +7,11 @@ from .views import (
 app_name = 'profiles'
 
 urlpatterns = [
-    path('profiles/<username>/',
+    path('<username>/',
          ProfileRetrieveAPIView.as_view(), name='single-profile'),
-    path('profiles/', ProfilesListAPIView.as_view(), name='profiles'),
-    path('profiles/<str:username>/follow/',
+    path('<str:username>/follow/',
          FollowUnfollowAPIView.as_view(), name='follow-unfollow'),
-    path('profiles/<str:username>/following/',
+    path('<str:username>/following/',
          FollowerFollowingAPIView.as_view(), name="following"),
+    path('', ProfilesListAPIView.as_view(), name='profiles'),
 ]
