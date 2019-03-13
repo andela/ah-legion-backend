@@ -271,6 +271,46 @@ Authentication required, returns the User
 
 Accepted fields: `email`, `username`, `password`, `image`, `bio`
 
+### Reset Password
+
+`POST /api/users/password-reset/`
+
+Example request body:
+
+```source-json
+{
+            "payload": {
+                "email": "jake@jake.com",
+                "callback_url": "https://legion.com"
+
+            }
+        }
+```
+
+Requires a registered user, returns a message, sends an email to given address
+
+Accepted fields: `email`, `callback_url`
+
+
+`PUT /api/users/password-reset/`
+
+Example request body:
+
+```source-json
+{
+  "user_password":{
+    "password": "jake123son",
+    "confirm_password": "jake123son",
+    "token":"valid-token"
+  }
+}
+```
+
+Requires a registered user and a token contained in the link sent to the supplied email address, returns a message
+
+Accepted fields: `password`, `new_password`, `token`
+
+
 ### Get Profile
 
 `GET /api/profiles/:username`

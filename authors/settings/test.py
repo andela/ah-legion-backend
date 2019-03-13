@@ -17,5 +17,6 @@ DATABASES = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DOMAIN = '127.0.0.1:8000/'
 FROM_EMAIL = 'test@test.com'
+DOMAIN = config('DOMAIN', default='')
+

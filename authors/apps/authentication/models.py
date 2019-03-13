@@ -145,3 +145,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token.decode('utf-8')
+
+
+class PasswordResetToken(models.Model):
+    """This class creates a Password Reset Token model."""
+
+    user = models.ForeignKey(
+        User,
+        related_name='password_reset_token',
+        on_delete=models.CASCADE
+    )
+    token = models.TextField()
+    created = models.DateTimeField(auto_now=True)
+    is_valid = models.BooleanField(default=True)
