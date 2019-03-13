@@ -27,6 +27,7 @@ class TestProfileViews(TestCase):
                 'username': self.username,
                 'email': self.email,
                 'password': self.password,
+                'callback_url': 'http://www.example.com'
             }
         }
         self.updated_data = {
@@ -41,12 +42,11 @@ class TestProfileViews(TestCase):
             "website": "notavalidurlforawebsiteman"
         }
         self.image_link = {
-            "image":"cats.jpg"
+            "image": "cats.jpg"
         }
         self.bad_image_link = {
-            "image":"cats.pdf"
+            "image": "cats.pdf"
         }
-
 
         self.test_client = Client()
 
@@ -132,7 +132,7 @@ class TestProfileViews(TestCase):
 
         self.assertEqual(response.json()['errors']['profile']['website'], [
                          "Enter a valid URL."])
-    
+
     def test_if_image_uploads_successfully(self):
         """ test if an profile image uploads successfully """
         token = self.login_a_user()
@@ -143,7 +143,7 @@ class TestProfileViews(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['user']['profile']['image_url'],
-            "https://res.cloudinary.com/dbsri2qtr/image/upload/c_fill,h_150,w_100/cats")
+                         "https://res.cloudinary.com/dbsri2qtr/image/upload/c_fill,h_150,w_100/cats")
 
     def test_if_one_can_upload_pdf_as_profile_image(self):
         """ test if an profile image uploads successfully """
@@ -155,4 +155,4 @@ class TestProfileViews(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['user']['image'],
-            "Only '.png', '.jpg', '.jpeg' files are accepted")
+                         "Only '.png', '.jpg', '.jpeg' files are accepted")

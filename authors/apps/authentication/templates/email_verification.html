@@ -1,0 +1,36 @@
+<div style="padding:0;margin:0 auto;width:100%!important;
+font-family:Helvetica,Arial,sans-serif">
+    <table style="background-color:#c8d1da;table-layout:fixed" align="center" cellspacing="0" cellpadding="0" width="90%" border="0" bgcolor="#edf0f3">
+        <tbody>
+            <tr>
+                <td align="center" style="font-weight: bold;font-size: 18px;background-color:rgb(174, 206, 255);padding:10px;border-bottom:1px solid #bebebe">
+                    Hi {{ username }}
+                </td>
+            </tr>
+            <tr align="center">
+                <td style="padding:12px;background: #F6F8FA">
+                    <div>
+                        <p>Thank you for creating an account with us at Author's Heaven
+                            <br/> Please verify your email address by clicking the link below
+                        </p>
+                        <br/>
+                        <a href="{{ domain }}/api/activate/{{ token }}" style="background:#065cdd;color:#f6f7f8;text-decoration: none;padding: 10px;border-radius:  5px;">Click here to verify email</a>
+                        <br/>
+                        <br/>
+                        <p>OR
+                            <br/>
+                            <br/>Copy and paste this link in your browser
+                            <br/>
+                            <br/>
+                            <a style="color:#2876ec; overflow: visble;"> {{ domain }}/api/activate/{{ token }}</a>
+                        </p>
+                        <p>
+                            <strong>This is an autogenerate email that was sent when you created an account with us. If this was not you, kindly ingore the email. Please do not reply.</strong>
+                        </p>
+                        <br/>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

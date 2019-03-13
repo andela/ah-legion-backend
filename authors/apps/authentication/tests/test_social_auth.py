@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
 
-
 class Test_Social_Authentication(APITestCase):
     """Tests social authentication"""
     url = reverse('authentication:social_login')
