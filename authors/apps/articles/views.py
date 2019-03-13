@@ -6,6 +6,7 @@ from rest_framework.permissions import (
     AllowAny, IsAuthenticated,
 )
 from rest_framework.response import Response
+from rest_framework.pagination import LimitOffsetPagination
 from .renderers import ArticleJSONRenderer
 from .serializers import TheArticleSerializer
 from .models import Article
@@ -42,6 +43,7 @@ class GetArticlesView(
     permission_classes = (AllowAny,)
     renderer_classes = (ArticleJSONRenderer,)
     serializer_class = (TheArticleSerializer)
+    pagination_class = LimitOffsetPagination
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -49,7 +51,8 @@ class GetArticlesView(
     def list(self, request, *args, **kwargs):
         # Decode token
         reply_not_found = {}
-        reply_found = []
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(self.queryset, request)
         published_articles = Article.objects.filter(
             published=True, activated=True)
 
@@ -60,14 +63,8 @@ class GetArticlesView(
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        for item in published_articles:
-            serialized = self.serializer_class(item)
-            reply_found.append(serialized.data)
-
-        return Response(
-            reply_found,
-            status=status.HTTP_200_OK
-        )
+        serializer = self.serializer_class(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class GetAnArticleView(
