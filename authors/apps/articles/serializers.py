@@ -2,17 +2,20 @@ from rest_framework import serializers
 
 from authors.apps.profiles.serializers import ProfileSerializer
 
-from .models import Article, Favorite, Like, Snapshot, ThreadedComment
+from .models import (Article, Favorite, Like, Snapshot,
+                     ThreadedComment, Rating)
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
 
     reading_time = serializers.ReadOnlyField(source='get_reading_time')
+    average_rating = serializers.ReadOnlyField(source='get_average_rating')
 
     class Meta:
         model = Article
         fields = [
-            'id', 'title', 'body', 'draft', 'slug', 'reading_time',
+            'id', 'title', 'body', 'draft', 'slug',
+            'reading_time', 'average_rating',
             'editing', 'description', 'published', 'activated',
             "created_at", "updated_at", 'author'
         ]
@@ -113,3 +116,28 @@ class FavoriteSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class RatingSerializer(serializers.ModelSerializer):
+    """Handles serialization of article ratings."""
+    value = serializers.IntegerField(
+        min_value=1,
+        max_value=5,
+        required=True)
+
+    class Meta:
+        model = Rating
+        fields = ['user', 'article', 'value', 'review']
+
+    def get_article(self, slug):
+        article = Article.objects.get(slug=slug, published=True, activated=True)
+        return article
+
+
+class ArticleRatingSerializer(serializers.ModelSerializer):
+    """Handles deserialization of article ratings."""
+    image = serializers.ReadOnlyField(source='get_image')
+    username = serializers.ReadOnlyField(source='get_username')
+    user = {"username": username, "image": image}
+
+    class Meta:
+        model = Rating
+        fields = ['value', 'review', 'username', 'image']

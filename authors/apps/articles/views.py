@@ -4,10 +4,11 @@ from .serializers import (ArticleCommentInputSerializer,
                           LikesSerializer,
                           TheArticleSerializer,
                           ThreadedCommentOutputSerializer,
-                          FavoriteSerializer)
+                          FavoriteSerializer, RatingSerializer,
+                          ArticleRatingSerializer)
 from .renderers import ArticleJSONRenderer, CommentJSONRenderer
 from .permissions import CanCreateComment, CanEditComment
-from .models import Article, Like, ThreadedComment, Favorite
+from .models import Article, Like, ThreadedComment, Favorite, Rating
 from authors.apps.core.views import BaseManageView
 from rest_framework.views import APIView, status
 from rest_framework.response import Response
@@ -122,7 +123,7 @@ class UpdateAnArticleView(mixins.UpdateModelMixin,
             )
             serialized.is_valid(raise_exception=True)
             self.perform_update(serialized)
-            if "activated" in the_data.keys()\
+            if "activated" in the_data.keys() \
                     and the_data["activated"] is False:
                 deleted_entry = {
                     "detail": "This article has been deleted."
@@ -206,7 +207,7 @@ class CreateLikeView(generics.CreateAPIView):
 
 class GetLikeView(generics.RetrieveAPIView):
     """Fetch like or dislike for an article"""
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
     queryset = Like.objects.all()
 
     def get(self, request, slug):
@@ -234,7 +235,7 @@ class GetLikeView(generics.RetrieveAPIView):
 
 class UpdateLikeView(generics.UpdateAPIView):
     """Perfom update on likes"""
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
     serializer_class = LikesSerializer
     queryset = Like.objects.all()
 
@@ -253,7 +254,7 @@ class UpdateLikeView(generics.UpdateAPIView):
 
 class DeleteLikeView(generics.DestroyAPIView):
     """Delete like"""
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
     serializer_class = LikesSerializer
     queryset = Like.objects.all()
 
@@ -286,7 +287,7 @@ class UpdateDeleteLikeView(BaseManageView):
 
 class GetArticleLikesView(APIView):
     """Gets all articles' likes and dislikes"""
-    permission_classes = (AllowAny, )
+    permission_classes = (AllowAny,)
 
     def get(self, request, slug):
         article = Article.objects.filter(
@@ -506,3 +507,107 @@ class GetUserFavoritesView(APIView):
             "favorites": favorite_articles
         }
         return Response(data=favorites, status=status.HTTP_200_OK)
+
+
+class RatingView(APIView):
+    """This class handles post and put requests of an article rating."""
+    serializer_class = RatingSerializer()
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, slug):
+        data = request.data.get('rating')
+        value = data['value']
+        review = data['review']
+
+        try:
+            article = self.serializer_class.get_article(slug)
+            count = Rating.objects.filter(article=article,
+                                          user=request.user.id).count()
+            if count > 0:
+                return Response({"message":
+                                 "You have already rated this article."},
+                                status=status.HTTP_403_FORBIDDEN)
+
+            user_id = article.author_id
+            article_id = article.id
+
+            if user_id == request.user.id:
+
+                return Response({"message":
+                                "You cannot rate your own article."},
+                                status=status.HTTP_403_FORBIDDEN
+                                )
+            else:
+                data = {
+                    "user": request.user.id,
+                    "article": article_id,
+                    "value": value,
+                    "review": review
+                }
+
+            serializer = RatingSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message":
+                            "Article rated."},
+                            status=status.HTTP_201_CREATED)
+
+        except Article.DoesNotExist:
+            return Response({"message": "This article was not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, slug):
+        try:
+            article = self.serializer_class.get_article(slug)
+            rating = Rating.objects.get(
+                article=article.id, user=request.user.id)
+            data = request.data.get('rating')
+
+            serializer = RatingSerializer(
+                instance=rating, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message": "Rating updated."})
+
+        except Article.DoesNotExist:
+            return Response({"message": "This article was not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+        except Rating.DoesNotExist:
+            return Response({"message": "You have not rated this article."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+
+class GetRatingView(APIView):
+    """This class handles get requests of an article rating."""
+    pagination_class = LimitOffsetPagination
+    serializer_class = RatingSerializer()
+    permission_classes = (AllowAny,)
+
+    def get(self, request, slug):
+        try:
+            article = self.serializer_class.get_article(slug)
+            rating_queryset = Rating.objects.filter(article=article)
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(rating_queryset, request)
+            serializer = ArticleRatingSerializer(page,
+                                                 many=True,
+                                                 context={"current_user":
+                                                          request.user}, )
+
+            count = Rating.objects.filter(article=article.id).\
+                exclude(review__exact='').count()
+            if count > 0:
+                return paginator.get_paginated_response(serializer.data)
+
+            return Response({
+                "message": "This article has no reviews."
+            },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except Article.DoesNotExist:
+            return Response({
+                "message": "This article was not found."
+            },
+                status=status.HTTP_404_NOT_FOUND
+            )
