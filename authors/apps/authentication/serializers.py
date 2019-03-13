@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from .models import User
-from authors.apps.profiles.serializers import GetProfileSerializer
+from authors.apps.profiles.serializers import ProfileSerializer
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -160,11 +160,11 @@ class UserSerializer(serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
-    profile = GetProfileSerializer()
+    profile = ProfileSerializer()
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'token', 'profile',)
+        fields = ('email', 'username', 'password', 'token', 'profile')
 
         # The `read_only_fields` option is an alternative for explicitly
         # specifying the field with `read_only=True` like we did for password
