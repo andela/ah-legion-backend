@@ -45,6 +45,7 @@ class UserManager(BaseUserManager):
         user = self.create_user(username, email, password)
         user.is_superuser = True
         user.is_staff = True
+        user.is_verified = True
         user.save()
 
         return user
@@ -70,6 +71,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # but we can still analyze the data.
     is_active = models.BooleanField(default=True)
 
+    # users must verify their accounts before they are able to log in.
     is_verified = models.BooleanField(default=False)
 
     # The `is_staff` flag is expected by Django to determine who can and cannot

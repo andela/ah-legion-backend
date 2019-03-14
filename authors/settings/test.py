@@ -15,3 +15,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DOMAIN = '127.0.0.1:8000/'
+FROM_EMAIL = 'test@test.com'

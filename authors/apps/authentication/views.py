@@ -1,3 +1,9 @@
+from django.http import HttpResponseRedirect
+from django.conf import settings
+from django.core import mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+
 from rest_framework import status
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,14 +18,19 @@ from social_core.backends.oauth import BaseOAuth1
 
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, RegistrationSerializer,
-                          UserSerializer, SocialAuthenticationSerializer)
+                          UserSerializer, SocialAuthenticationSerializer,
+                          CreateEmailVerificationSerializer)
 from .utils import validate_image
+from authors.apps.core.utils import TokenHandler
+from .models import User
 
 
 class RegistrationAPIView(APIView):
     """
     post:
         Register a new user by creating a new user instance.
+        All newly registered users will have an email sent
+        to their email address for verification
     """
     # Allow any user (authenticated or not) to hit this endpoint.
     permission_classes = (AllowAny,)
@@ -36,15 +47,37 @@ class RegistrationAPIView(APIView):
         # your own work later on. Get familiar with it.
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        user_email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
+        callback = {'url': serializer.validated_data['callback_url']}
+        token_payload = {'email': user_email,
+                         'callback_url': callback['url']}
+        domain = settings.DOMAIN
+        token = TokenHandler().create_verification_token(token_payload)
+        template_name = 'email_verification.html'
+        context = {'username': username, 'token': token, 'domain': domain}
+        # https://stackoverflow.com/questions/3005080/how-to-send-html-email-with-django-with-dynamic-content-in-it
+        html_message = render_to_string(template_name, context)
+        text_message = strip_tags(html_message)
+        mail.send_mail(
+            'Please verify your email',
+            text_message, settings.FROM_EMAIL,
+            [user_email, ], html_message=html_message)
+
+        message = {
+            'message': 'Successfully created your account. Please proceed to your email ' + # noqa
+                   user_email + ' to verify your account.'}
+        serializer.save()
+        return Response(message, status=status.HTTP_201_CREATED)
 
 
 class LoginAPIView(APIView):
     """
     post:
-        Login an exising user
+        Login an exising user. Users who have not
+        verified their accounts should not be
+        able to log in.
     """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
@@ -180,3 +213,73 @@ class SocialAuthenticationView(CreateAPIView):
         serializer = UserSerializer(user)
         serializer.instance = user
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class EmailVerificationView(APIView):
+    """We need a view that will handle requests for verifying email adresses"""
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+    serializer_class = UserSerializer
+
+    def get(self, request, token):
+        decoded_token = TokenHandler().validate_token(token)
+
+        if 'email' not in decoded_token:
+            return Response(
+                {'error': 'invalid token'},
+                status=status.HTTP_400_BAD_REQUEST)
+        # we check if the user exists and whether they are verified.
+        # if we don't find a user we raise an error
+        # if we find a registered user, we raise an error
+        try:
+            user = User.objects.get(email=decoded_token['email'])
+        except User.DoesNotExist:
+            return Response(
+                {'email': 'No user with this email has been registered'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.is_verified is True:
+            return Response(
+                {'email': 'This email has already been verified'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.is_verified = True
+        user.save()
+        return HttpResponseRedirect(decoded_token['callback_url'])
+
+
+class CreateEmailVerificationTokenAPIView(APIView):
+    """
+    This class contains method for creating a new verification
+    token for registered users
+    """
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+    serializer_class = CreateEmailVerificationSerializer
+
+    def post(self, request):
+        """This is the method that will be called when users
+        want a new verification token."""
+        data = request.data
+
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.create_payload(data)
+
+        token = TokenHandler().create_verification_token(payload)
+        user_email = payload['email']
+        domain = settings.DOMAIN
+        template_name = 'email_verification.html'
+        context = {'username': payload['username'],
+                   'token': token, 'domain': domain}
+        html_message = render_to_string(template_name, context)
+        text_message = strip_tags(html_message)
+        mail.send_mail(
+            'Please verify your email',
+            text_message, settings.FROM_EMAIL,
+            [user_email, ], html_message=html_message)
+
+        message = {'message': 'New verification token created. Please proceed to your email ' + # noqa
+                   user_email + ' to verify your account.'}
+        return Response(message, status=status.HTTP_201_CREATED)

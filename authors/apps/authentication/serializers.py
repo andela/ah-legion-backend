@@ -1,7 +1,8 @@
 from django.contrib.auth import authenticate
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
 from .models import User
 from authors.apps.profiles.serializers import GetProfileSerializer
 
@@ -29,11 +30,22 @@ class RegistrationSerializer(serializers.ModelSerializer):
         }
     )
 
+    callback_url = serializers.URLField(
+        write_only=True,
+        validators=[URLValidator(
+            message='Callback URL should be a valid URL',
+            code='invalid_callback_url'
+        )],
+        error_messages={
+            'invalid_url': 'Please check that the callback URL is a valid URL'
+        }
+    )
+
     class Meta:
         model = User
         # List all of the fields that could possibly be included in a request
         # or response, including fields specified explicitly above.
-        fields = ['email', 'username', 'password']
+        fields = ['email', 'username', 'password', 'callback_url']
         extra_kwargs = {
             'email': {
                 'error_messages': {
@@ -62,6 +74,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Use the `create_user` method we wrote earlier to create a new user.
+        validated_data.pop('callback_url')
         return User.objects.create_user(**validated_data)
 
 
@@ -114,6 +127,11 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError(
                 'This user has been deactivated.'
+            )
+
+        if not user.is_verified:
+            raise serializers.ValidationError(
+                'Please verify your account to proceed.'
             )
 
         # Django provides a flag on our `User` model called `is_active`. The
@@ -203,3 +221,43 @@ class SocialAuthenticationSerializer(serializers.Serializer):
     access_token_secret = serializers.CharField(
         max_length=500, allow_blank=True)
     provider = serializers.CharField(max_length=500, required=True)
+
+
+class CreateEmailVerificationSerializer(serializers.Serializer):
+    """Create a new token for email verification"""
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(required=True)
+    callback_url = serializers.URLField(
+        write_only=True, required=True
+    )
+
+    class Meta:
+        fields = ['email', 'callback_url', 'username']
+
+    def create_payload(self, data):
+        email = data.get('email', None)
+        username = data.get('username', None)
+        callback_url = data.get('callback_url', None)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                'No user with this email address is registered.'
+            )
+
+        if user.username != username or user.email != email:
+            raise serializers.ValidationError(
+                "Your username and email don't match."
+            )
+
+        if user.is_verified:
+            raise serializers.ValidationError(
+                'This user has already been verified'
+            )
+
+        return {
+            'email': email,
+            'username': username,
+            'callback_url': callback_url
+        }
