@@ -67,3 +67,4 @@ class Test_Social_Authentication(APITestCase):
 
         response = self.client.post(self.url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
