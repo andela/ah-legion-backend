@@ -45,12 +45,14 @@ class ArticleJSONRenderer(JSONRenderer):
             # many articles
             try:
                 reply = []
-                for item in data:
+                the_articles = data['results']
+                for item in the_articles:
                     my_data = self._single_article_formatting(item)
                     reply.append(my_data)
 
+                data['results'] = reply
                 return json.dumps({
-                    'Articles': reply
+                    'Articles': data
                 })
             except (KeyError, TypeError, ValueError):
                 return json.dumps({
