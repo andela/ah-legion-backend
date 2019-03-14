@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from .utils import generate_unique_slug
+import readtime
 
 
 class Article(models.Model):
@@ -38,8 +39,12 @@ class Article(models.Model):
 
         super().save(*args, **kwargs)
 
+    def get_reading_time(self):
+        result = readtime.of_text(str(self.body))
+        reading_time = result.minutes
+        unit = " minutes"
+
+        return str(reading_time) + unit
+
     class Meta:
         ordering = ["-created_at", "-updated_at"]
-
-
-

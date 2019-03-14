@@ -71,6 +71,14 @@ class ArticleViewsTestCase(TestCase):
         response = client.post(reverse('articles:create_article'),
                                self.sample_input, **self.header_user1, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    
+    def test_get_reading_time(self):
+        client = APIClient()
+        response = client.post(reverse('articles:create_article'),
+                self.sample_input,**self.header_user1, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()['Article']['reading_time'], "1 minutes")
+
 
     def test_create_article_invalid_data(self):
         sample_input = {

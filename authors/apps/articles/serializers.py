@@ -4,10 +4,12 @@ from .models import Article
 
 class TheArticleSerializer(serializers.ModelSerializer):
 
+    reading_time = serializers.ReadOnlyField(source='get_reading_time')
+
     class Meta:
         model = Article
         fields = [
-            'id', 'title', 'body', 'draft', 'slug',
+            'id', 'title', 'body', 'draft', 'slug', 'reading_time',
             'editing', 'description', 'published', 'activated',
             "created_at", "updated_at", 'author'
         ]
