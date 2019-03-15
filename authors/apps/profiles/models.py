@@ -23,6 +23,8 @@ class Profile(TimeStampModel):
     website = models.URLField('website', blank=True, null=True, default='')
     image = CloudinaryField(
         'image', default="image/upload/v1552193974/gyzbaptikqalgthxfdnh.png")  # noqa
+    followings = models.ManyToManyField(
+        'self', related_name='followers', symmetrical=False)
 
     def __str__(self):
         return self.user.username

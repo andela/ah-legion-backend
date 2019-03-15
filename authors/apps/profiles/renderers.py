@@ -8,6 +8,12 @@ class ProfileJSONRenderer(JSONRenderer):
 
     def render(self, data, media_type=None, renderer_context=None):
 
+        errors = data.get('errors', None)
+
+        if errors is not None:
+            # As mentioned about, we will let the default JSONRenderer handle
+            # rendering errors.
+            return super().render(data)
         # Finally, we can render our data under the "profile" namespace.
         return json.dumps({
             'profile': data
