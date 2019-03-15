@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Article
+from .models import Article, Like
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -43,3 +43,12 @@ class TheArticleSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+class LikesSerializer(serializers.ModelSerializer):
+    """
+    Serializers for likes
+    """
+    class Meta():
+        model = Like
+        fields = ('id', 'user_id', 'article_id', 'is_like')
+        read_only_fields = ['id']

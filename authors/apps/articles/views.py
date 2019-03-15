@@ -1,6 +1,7 @@
 from rest_framework import (
     generics, mixins, status
 )
+from rest_framework.views import APIView
 
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated,
@@ -8,8 +9,9 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from .renderers import ArticleJSONRenderer
-from .serializers import TheArticleSerializer
-from .models import Article
+from .serializers import TheArticleSerializer, LikesSerializer
+from .models import Article, Like
+from authors.apps.core.views import BaseManageView
 
 
 # Create your views here.
@@ -170,3 +172,141 @@ class UpdateAnArticleView(
             no_edit,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class CreateLikeView(generics.CreateAPIView):
+    """This class creates a new like or dislike"""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = LikesSerializer
+
+    def create(self, request, slug):
+        """Creates a like"""
+        data = request.data
+        article = Article.objects.filter(
+            slug=slug, published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+
+        like = Like.objects.filter(
+            user_id=request.user.pk, article_id=article.id).first()
+        if like is not None:
+            like_found = {
+                "detail": "Article already liked or disliked, \
+                    use another route to update."
+            }
+            return Response(data=like_found, status=status.HTTP_400_BAD_REQUEST)
+
+        data['article_id'] = article.id
+        data['user_id'] = request.user.pk
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class GetLikeView(generics.RetrieveAPIView):
+    """Fetch like or dislike for an article"""
+    permission_classes = (IsAuthenticated, )
+    queryset = Like.objects.all()
+
+    def get(self, request, slug):
+        article = Article.objects.filter(
+            slug=slug, published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+        like = Like.objects.filter(
+            user_id=request.user.pk, article_id=article.id).first()
+        if like is None:
+            no_like = {
+                "detail": "This user has neither liked \
+                    nor disliked the article."
+            }
+            return Response(data=no_like, status=status.HTTP_404_NOT_FOUND)
+        like_data = {"id": like.id,
+                     "article_id": like.article_id.id,
+                     "user_id": like.user_id.id
+                     }
+        return Response(data=like_data, status=status.HTTP_200_OK)
+
+
+class UpdateLikeView(generics.UpdateAPIView):
+    """Perfom update on likes"""
+    permission_classes = (IsAuthenticated, )
+    serializer_class = LikesSerializer
+    queryset = Like.objects.all()
+
+    def patch(self, request, *args, **kwargs):
+        like_id = kwargs['pk']
+        like = Like.objects.filter(id=like_id).first()
+        if like:
+            like_owner_id = like.user_id.id
+            if like_owner_id != request.user.id:
+                message = {
+                    "detail": "This user does not own this like"
+                }
+                return Response(data=message, status=status.HTTP_403_FORBIDDEN)
+        return self.partial_update(request, *args, **kwargs)
+
+
+class DeleteLikeView(generics.DestroyAPIView):
+    """Delete like"""
+    permission_classes = (IsAuthenticated, )
+    serializer_class = LikesSerializer
+    queryset = Like.objects.all()
+
+    def delete(self, request, *args, **kwargs):
+        like_id = kwargs['pk']
+        like = Like.objects.filter(id=like_id).first()
+        if like:
+            like_owner_id = like.user_id.id
+            if like_owner_id != request.user.id:
+                message = {"detail": "This user does not own this like"}
+                return Response(data=message, status=status.HTTP_403_FORBIDDEN)
+        return self.destroy(request, *args, **kwargs)
+
+
+class CreateRetrieveLikeView(BaseManageView):
+    """Handles create and retrieve likes"""
+    VIEWS_BY_METHOD = {
+        'POST': CreateLikeView.as_view,
+        'GET': GetLikeView.as_view,
+    }
+
+
+class UpdateDeleteLikeView(BaseManageView):
+    """Handles update and retrieve a like"""
+    VIEWS_BY_METHOD = {
+        'PATCH': UpdateLikeView.as_view,
+        'DELETE': DeleteLikeView.as_view,
+    }
+
+
+class GetArticleLikesView(APIView):
+    """Gets all articles' likes and dislikes"""
+    permission_classes = (AllowAny, )
+
+    def get(self, request, slug):
+        article = Article.objects.filter(
+            slug=slug, published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+        likes_queryset = Like.objects.filter(
+            is_like=True, article_id=article.id)
+        dislikes_queryset = Like.objects.filter(
+            is_like=False, article_id=article.id)
+        dislikes_count = dislikes_queryset.count()
+        likes_count = likes_queryset.count()
+        likes_dislikes = {
+            "likes": likes_count,
+            "dislikes": dislikes_count,
+        }
+        return Response(data=likes_dislikes, status=status.HTTP_200_OK)

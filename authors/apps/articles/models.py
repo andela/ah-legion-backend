@@ -48,3 +48,12 @@ class Article(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-updated_at"]
+
+
+class Like(models.Model):
+    user_id = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='likes')
+    article_id = models.ForeignKey(
+        Article, on_delete=models.CASCADE, related_name='likes')
+    is_like = models.BooleanField()
