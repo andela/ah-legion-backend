@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from authors.apps.profiles.serializers import ProfileSerializer
 
-from .models import Article, Like, Snapshot, ThreadedComment
+from .models import Article, Favorite, Like, Snapshot, ThreadedComment
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -101,3 +101,15 @@ class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
         model = ThreadedComment
         fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
                   'edit_history', 'comments')
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """
+    Serializers for favorites
+    """
+    class Meta():
+        model = Favorite
+        fields = ('id', 'user_id', 'article_id')
+        read_only_fields = ['id']
+
+

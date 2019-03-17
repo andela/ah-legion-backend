@@ -1,21 +1,20 @@
-from rest_framework import generics, mixins
-from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView, status
-
-from authors.apps.core.views import BaseManageView
-
-from .models import Article, Like, ThreadedComment
-from .permissions import CanCreateComment, CanEditComment
-from .renderers import ArticleJSONRenderer, CommentJSONRenderer
 from .serializers import (ArticleCommentInputSerializer,
                           CommentCommentInputSerializer,
                           EmbededCommentOutputSerializer,
                           LikesSerializer,
                           TheArticleSerializer,
-                          ThreadedCommentOutputSerializer)
+                          ThreadedCommentOutputSerializer,
+                          FavoriteSerializer)
+from .renderers import ArticleJSONRenderer, CommentJSONRenderer
+from .permissions import CanCreateComment, CanEditComment
+from .models import Article, Like, ThreadedComment, Favorite
+from authors.apps.core.views import BaseManageView
+from rest_framework.views import APIView, status
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import generics, mixins
+from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import LimitOffsetPagination
 
 
 class CreateArticleView(mixins.CreateModelMixin,
@@ -315,6 +314,7 @@ class FetchArticleMixin:
     Provide get_article() method that returns
     the article from the url.
     """
+
     def get_article(self):
         article = get_object_or_404(Article, slug=self.kwargs['article_slug'])
         return article
@@ -420,3 +420,89 @@ class CommentRetrieveEditDeleteView(FetchArticleMixin,
         comment.soft_delete()
         return Response({"detail": "comment deleted"},
                         status=status.HTTP_200_OK)
+
+
+class FavoriteView(generics.CreateAPIView):
+    """This class creates a new favorite"""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = FavoriteSerializer
+
+    def post(self, request, slug):
+        """Creates a favorite"""
+        data = request.data
+        article = Article.objects.filter(
+            slug=slug, published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+
+        favorite = Favorite.objects.filter(
+            user_id=request.user.pk, article_id=article.id).first()
+        if favorite is not None:
+            favorite_found = {
+                "detail": "Article already in favorites."
+            }
+            return Response(data=favorite_found,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        data['article_id'] = article.id
+        data['user_id'] = request.user.pk
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        data = serializer.data
+        data['detail'] = 'Article added to favorites.'
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, *args, **kwargs):
+        article = Article.objects.filter(
+            slug=kwargs['slug'], published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+        favorite = Favorite.objects.filter(
+            article_id=article.id, user_id=request.user.pk).first()
+        if favorite:
+            message = {"detail": "Article removed from favorites"}
+            favorite.delete()
+            return Response(data=message, status=status.HTTP_204_NO_CONTENT)
+        not_found = {"detail": "Article not favorite"}
+        return Response(not_found, status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, *args, **kwargs):
+        article = Article.objects.filter(
+            slug=kwargs['slug'], published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+        favorite = Favorite.objects.filter(
+            article_id=article.id, user_id=request.user.pk).first()
+        if favorite:
+            serializer = self.serializer_class(favorite)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        not_found = {"detail": "Article not favorite"}
+        return Response(not_found, status.HTTP_404_NOT_FOUND)
+
+
+class GetUserFavoritesView(APIView):
+    """Gets all users' favorite articles"""
+    permission_classes = (IsAuthenticated, )
+
+    def get(self, request):
+        favorites_queryset = Favorite.objects.filter(
+            user_id=request.user.id)
+
+        favorite_articles = []
+        for favorite in favorites_queryset:
+            article = TheArticleSerializer(favorite.article_id).data
+            favorite_articles.append(article)
+        favorites = {
+            "favorites": favorite_articles
+        }
+        return Response(data=favorites, status=status.HTTP_200_OK)
