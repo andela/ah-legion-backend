@@ -45,6 +45,8 @@ api_patterns = [
                               namespace='profiles')),
     path('user/', include('authors.apps.authentication.urls',
                           namespace='authentication')),
+    path('user/notifications/', include('authors.apps.notifications.urls',
+                              namespace='notifications')),
 ]
 
 

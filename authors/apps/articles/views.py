@@ -17,6 +17,7 @@ from rest_framework import generics, mixins
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from ..articles.utils import edit_article
+from authors.apps.notifications.backends import notify
 
 
 class CreateArticleView(mixins.CreateModelMixin,
@@ -197,6 +198,10 @@ class CreateLikeView(generics.CreateAPIView):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        instance = Like.objects.get(pk=serializer.data['id'])
+        if request.user.id is instance.article_id.author.id:
+            pass
+        notify.article_liked(request, instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -342,6 +347,9 @@ class CommentListCreateView(FetchArticleMixin, APIView):
         comment = serializer.save()
         response_serializer = ThreadedCommentOutputSerializer(
             comment, context={'current_user': request.user})
+        instance = ThreadedComment.objects.get(
+            pk=response_serializer.data['id'])
+        notify.article_commented(request, instance)
         return Response(response_serializer.data,
                         status=status.HTTP_201_CREATED)
 
@@ -380,6 +388,7 @@ class CommentRetrieveEditDeleteView(FetchArticleMixin,
         comment = serializer.save()
         response_serializer = EmbededCommentOutputSerializer(
             comment, context={'current_user': request.user})
+        notify.comment_commented(request, comment)
         return Response(response_serializer.data, status.HTTP_201_CREATED)
 
     def put(self, request, *args, **kwargs):
@@ -450,7 +459,9 @@ class FavoriteView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         data = serializer.data
+        instance = Favorite.objects.get(pk=data['id'])
         data['detail'] = 'Article added to favorites.'
+        notify.article_favourited(request, instance)
         return Response(data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):

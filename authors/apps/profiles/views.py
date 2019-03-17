@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.serializers import ValidationError
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -13,6 +13,8 @@ from .serializers import (
     ProfileSerializer, MultipleProfileSerializer,
     FollowUnfollowSerializer, FollowerFollowingSerializer)
 from .exceptions import ProfileDoesNotExist
+from authors.apps.notifications.backends import notify
+from authors.apps.authentication.models import User
 
 
 class ProfileRetrieveAPIView(RetrieveAPIView):
@@ -39,6 +41,46 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
             profile, context={'current_user': request.user})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ToggleAppNotifications(UpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ProfileJSONRenderer,)
+    
+    def put(self, request):
+        user = request.user
+        user_profile = user.profile
+        if user_profile.app_notifications == True:
+            user_profile.app_notifications = False
+            user_profile.save()
+            return Response({
+                "message":"you have turned app notifications off"},
+                status=status.HTTP_200_OK)
+        else:
+            user_profile.app_notifications = True
+            user_profile.save()
+            return Response({
+                "message":"you have turned app notifications on"},
+                status=status.HTTP_200_OK)
+
+class ToggleEmailNotifications(UpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ProfileJSONRenderer,)
+    
+    def put(self, request):
+        user = request.user
+        user_profile = user.profile
+        if user_profile.email_notifications == True:
+            user_profile.email_notifications = False
+            user_profile.save()
+            return Response({
+                "message":"you have turned email notifications off"},
+                status=status.HTTP_200_OK)
+        else:
+            user_profile.email_notifications = True
+            user_profile.save()
+            return Response({
+                "message":"you have turned email notifications on"},
+                status=status.HTTP_200_OK)
 
 
 class ProfilesListAPIView(ListAPIView):
@@ -89,6 +131,8 @@ class FollowUnfollowAPIView(APIView):
             "message": f"You are now following {username}",
             "user": serializer.data
         }
+        just_followed = User.objects.get(pk=to_be_followed.pk)
+        notify.user_followed(request, just_followed)
         return Response(message, status=status.HTTP_200_OK)
 
     def delete(self, request, username):

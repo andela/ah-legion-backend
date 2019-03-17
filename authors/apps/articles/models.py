@@ -129,7 +129,7 @@ class Favorite(models.Model):
     """Implement storage of favorites"""
     user_id = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-        related_name='favorites')
+        related_name='favoriters')
     article_id = models.ForeignKey(
         Article, on_delete=models.CASCADE, related_name='favorites')
 

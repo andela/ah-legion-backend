@@ -25,6 +25,12 @@ class Profile(TimeStampModel):
         'image', default="image/upload/v1552193974/gyzbaptikqalgthxfdnh.png")  # noqa
     followings = models.ManyToManyField(
         'self', related_name='followers', symmetrical=False)
+    app_notifications = models.BooleanField(
+        'app_notifs', default=True
+    )
+    email_notifications = models.BooleanField(
+        'email_notifs', default=True
+    )
 
     def __str__(self):
         return self.user.username
