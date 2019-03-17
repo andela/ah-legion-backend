@@ -285,3 +285,43 @@ class TestProfileViews(TestCase):
         self.assertEqual(response.json()['detail'],
                          "The requested profile does not exist.")
         self.assertEqual(response.status_code, 400)
+
+    def test_toggle_app_notifications_off(self):
+        """ test if a user may successfuly toggle their app notifications """
+        token = self.login_a_user()
+        headers = {'HTTP_AUTHORIZATION': 'Bearer ' + token}
+        response = self.test_client.put(
+            "/api/user/notifications/app/toggle-app-notifications/", **headers, content_type='application/json')
+        self.assertEqual(response.json()['profile']['message'],
+                         "you have turned app notifications off")
+
+    def test_toggle_app_notifications_on(self):
+        """ test if a user may successfuly toggle their app notifications """
+        token = self.login_a_user()
+        headers = {'HTTP_AUTHORIZATION': 'Bearer ' + token}
+        self.test_client.put(
+            "/api/user/notifications/app/toggle-app-notifications/", **headers, content_type='application/json')
+        response = self.test_client.put(
+            "/api/user/notifications/app/toggle-app-notifications/", **headers, content_type='application/json')
+        self.assertEqual(response.json()['profile']['message'],
+                         "you have turned app notifications on")
+
+    def test_toggle_email_notifications_off(self):
+        """ test if a user may successfuly toggle their app notifications """
+        token = self.login_a_user()
+        headers = {'HTTP_AUTHORIZATION': 'Bearer ' + token}
+        response = self.test_client.put(
+            "/api/user/notifications/app/toggle-email-notifications/", **headers, content_type='application/json')
+        self.assertEqual(response.json()['profile']['message'],
+                         "you have turned email notifications off")
+
+    def test_toggle_email_notifications_on(self):
+        """ test if a user may successfuly toggle their app notifications """
+        token = self.login_a_user()
+        headers = {'HTTP_AUTHORIZATION': 'Bearer ' + token}
+        self.test_client.put(
+            "/api/user/notifications/app/toggle-email-notifications/", **headers, content_type='application/json')
+        response = self.test_client.put(
+            "/api/user/notifications/app/toggle-email-notifications/", **headers, content_type='application/json')
+        self.assertEqual(response.json()['profile']['message'],
+                         "you have turned email notifications off")

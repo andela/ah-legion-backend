@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.serializers import ValidationError
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -11,8 +11,11 @@ from .models import Profile
 from .renderers import ProfileJSONRenderer
 from .serializers import (
     ProfileSerializer, MultipleProfileSerializer,
-    FollowUnfollowSerializer, FollowerFollowingSerializer)
+    FollowUnfollowSerializer, FollowerFollowingSerializer,
+    NotificationSerializer)
 from .exceptions import ProfileDoesNotExist
+from authors.apps.notifications.backends import notify
+from authors.apps.authentication.models import User
 
 
 class ProfileRetrieveAPIView(RetrieveAPIView):
@@ -39,6 +42,27 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
             profile, context={'current_user': request.user})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SwitchNotificationsOnOff(UpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ProfileJSONRenderer,)
+   
+    def get(self, request):
+        user = request.user
+        app_notifications_permissions = user.profile.app_notifications
+        email_notifications_permissions = user.profile.email_notifications
+
+        return Response({
+            "app_notifications_permissions":app_notifications_permissions,
+            "email_notifications_permissions":email_notifications_permissions
+        })
+
+    def put(self, request):
+        user = request.user
+        serializer = NotificationSerializer.update_permissions(self, user=user, data=request.data)
+        return Response(serializer, status=status.HTTP_200_OK)
+
 
 
 class ProfilesListAPIView(ListAPIView):
@@ -89,6 +113,8 @@ class FollowUnfollowAPIView(APIView):
             "message": f"You are now following {username}",
             "user": serializer.data
         }
+        just_followed = User.objects.get(pk=to_be_followed.pk)
+        notify.user_followed(request, just_followed)
         return Response(message, status=status.HTTP_200_OK)
 
     def delete(self, request, username):

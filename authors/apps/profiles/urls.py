@@ -14,4 +14,5 @@ urlpatterns = [
     path('<str:username>/following/',
          FollowerFollowingAPIView.as_view(), name="following"),
     path('', ProfilesListAPIView.as_view(), name='profiles'),
+
 ]

@@ -1,9 +1,11 @@
 from django.conf import settings
+from django.contrib.postgres.fields import HStoreField
 from django.db import models
 from django.db.models.signals import post_save
 from authors.apps.core.models import TimeStampModel
 from cloudinary.models import CloudinaryField
 from cloudinary import CloudinaryImage
+from authors.apps.notifications.backends import get_default_permissions
 
 
 class Profile(TimeStampModel):
@@ -25,6 +27,8 @@ class Profile(TimeStampModel):
         'image', default="image/upload/v1552193974/gyzbaptikqalgthxfdnh.png")  # noqa
     followings = models.ManyToManyField(
         'self', related_name='followers', symmetrical=False)
+    app_notifications = HStoreField(default=get_default_permissions)
+    email_notifications = HStoreField(default=get_default_permissions)
 
     def __str__(self):
         return self.user.username
@@ -52,3 +56,4 @@ def create_profile(sender, **kwargs):
 
 # connect the signal to the handler function
 post_save.connect(create_profile, sender=settings.AUTH_USER_MODEL)
+

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Profile
+from ..authentication.models import User
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -86,3 +87,31 @@ class FollowerFollowingSerializer(serializers.ModelSerializer):
         following = Profile.objects.filter(
             pk=current_user.pk, followings=obj.pk).exists()
         return following
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ('app_notifications', 'email_notifications')
+
+
+    def update_permissions(self, user=None, data=None):
+        
+        user.profile.app_notifications['user-follow'] = data['app_notifications_permissions']['user-follow']
+        user.profile.app_notifications['article-liked'] = data['app_notifications_permissions']['article-liked']
+        user.profile.app_notifications['article-commented'] = data['app_notifications_permissions']['article-commented']
+        user.profile.app_notifications['article-published'] = data['app_notifications_permissions']['article-published']
+        user.profile.app_notifications['comment-commented'] = data['app_notifications_permissions']['comment-commented']
+        user.profile.app_notifications['article-favourited'] = data['app_notifications_permissions']['article-favourited']
+
+        user.profile.email_notifications['user-follow'] = data['email_notifications_permissions']['user-follow']
+        user.profile.email_notifications['article-liked'] = data['email_notifications_permissions']['article-liked']
+        user.profile.email_notifications['article-commented'] = data['email_notifications_permissions']['article-commented']
+        user.profile.email_notifications['article-published'] = data['email_notifications_permissions']['article-published']
+        user.profile.email_notifications['comment-commented'] = data['email_notifications_permissions']['comment-commented']
+        user.profile.email_notifications['article-favourited'] = data['email_notifications_permissions']['article-favourited']
+
+        user.profile.save()
+
+        return {"app_notifications_permissions":user.profile.app_notifications, "email_notifications_permissions":user.profile.email_notifications}
