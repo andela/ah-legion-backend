@@ -1,3 +1,12 @@
+from rest_framework import generics, mixins
+from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView, status
+
+from .permissions import CanCreateComment, CanEditComment
+from .renderers import ArticleJSONRenderer, CommentJSONRenderer
 from .serializers import (ArticleCommentInputSerializer,
                           CommentCommentInputSerializer,
                           EmbededCommentOutputSerializer,
@@ -5,17 +14,10 @@ from .serializers import (ArticleCommentInputSerializer,
                           TheArticleSerializer,
                           ThreadedCommentOutputSerializer,
                           FavoriteSerializer, RatingSerializer,
-                          ArticleRatingSerializer)
-from .renderers import ArticleJSONRenderer, CommentJSONRenderer
-from .permissions import CanCreateComment, CanEditComment
-from .models import Article, Like, ThreadedComment, Favorite, Rating, Tag
+                          ArticleRatingSerializer, BookmarkSerializer)
+from .models import (Article, Bookmark, Like,
+                     ThreadedComment, Favorite, Rating, Tag)
 from authors.apps.core.views import BaseManageView
-from rest_framework.views import APIView, status
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import generics, mixins
-from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import LimitOffsetPagination
 from ..articles.utils import edit_article
 
 
@@ -533,7 +535,7 @@ class RatingView(APIView):
             if user_id == request.user.id:
 
                 return Response({"message":
-                                "You cannot rate your own article."},
+                                 "You cannot rate your own article."},
                                 status=status.HTTP_403_FORBIDDEN
                                 )
             else:
@@ -548,7 +550,7 @@ class RatingView(APIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response({"message":
-                            "Article rated."},
+                             "Article rated."},
                             status=status.HTTP_201_CREATED)
 
         except Article.DoesNotExist:
@@ -610,3 +612,73 @@ class GetRatingView(APIView):
             },
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class BookmarkView(generics.CreateAPIView):
+    """This class creates a new bookmark"""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = BookmarkSerializer
+
+    def post(self, request, **kwargs):
+        """Creates a bookmark"""
+        data = request.data
+        article = get_object_or_404(
+            Article, slug=kwargs['slug'], published=True, activated=True)
+        bookmark = Bookmark.objects.filter(
+            user_id=request.user.pk, article_id=article.id).first()
+        if bookmark is not None:
+            favorite_found = {
+                "detail": "Article already bookmarked."
+            }
+            return Response(data=favorite_found,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        data['article_id'] = article.id
+        data['user_id'] = request.user.pk
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        data['detail'] = 'Article added to bookmarks.'
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, *args, **kwargs):
+        article = get_object_or_404(
+            Article, slug=kwargs['slug'], published=True, activated=True)
+        favorite = Bookmark.objects.filter(
+            article_id=article.id, user_id=request.user.pk).first()
+        if favorite:
+            message = {"detail": "Article removed from bookmarked articles"}
+            favorite.delete()
+            return Response(data=message, status=status.HTTP_204_NO_CONTENT)
+        not_found = {"detail": "Article not bookmarked"}
+        return Response(not_found, status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, *args, **kwargs):
+        article = get_object_or_404(
+            Article, slug=kwargs['slug'], published=True, activated=True)
+        favorite = Bookmark.objects.filter(
+            article_id=article.id, user_id=request.user.pk).first()
+        if favorite:
+            serializer = self.serializer_class(favorite)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        not_found = {"detail": "Article not bookmarked"}
+        return Response(not_found, status.HTTP_404_NOT_FOUND)
+
+
+class GetUserBookmarksView(APIView):
+    """Gets all bookmarked articles"""
+    permission_classes = (IsAuthenticated, )
+
+    def get(self, request):
+        bookmarks_queryset = Bookmark.objects.filter(
+            user_id=request.user.id)
+
+        bookmarked_articles = []
+        for bookmark in bookmarks_queryset:
+            article = TheArticleSerializer(bookmark.article_id, context={
+                                           "current_user": request.user}).data
+            bookmarked_articles.append(article)
+        bookmarks = {
+            "bookmarks": bookmarked_articles
+        }
+        return Response(data=bookmarks, status=status.HTTP_200_OK)

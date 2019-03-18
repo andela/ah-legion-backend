@@ -1,5 +1,5 @@
-from . import views
 from django.urls import path
+from . import views
 
 app_name = 'articles'
 
@@ -26,7 +26,6 @@ urlpatterns = [
          name="comment"),
     path('<slug:slug>/likes/',
          views.GetArticleLikesView.as_view(), name="get_likes"),
-
     path('<slug:slug>/favorite/',
          views.FavoriteView.as_view(), name="favorite"),
 
@@ -35,5 +34,9 @@ urlpatterns = [
     path('<slug:slug>/rate/',
          views.RatingView.as_view(), name="rate"),
     path('<slug:slug>/ratings/',
-         views.GetRatingView.as_view(), name="get_rating")
+         views.GetRatingView.as_view(), name="get_rating"),
+    path('<slug:slug>/bookmark/',
+         views.BookmarkView.as_view(), name="create_bookmark"),
+    path('user/bookmarks/',
+         views.GetUserBookmarksView.as_view(), name="get_bookmarks"),
 ]

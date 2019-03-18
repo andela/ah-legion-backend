@@ -3,7 +3,7 @@ from django.test import TestCase
 from authors.apps.core.factories import UserFactory
 
 from ..factories import ArticleFactory
-from ..models import Snapshot, ThreadedComment
+from ..models import Snapshot, ThreadedComment, Bookmark
 
 
 class CommentMethodTests(TestCase):
