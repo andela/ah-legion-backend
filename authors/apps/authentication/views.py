@@ -1,28 +1,29 @@
-from django.http import HttpResponseRedirect
-from django.conf import settings
-from django.core import mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-
-from rest_framework import status
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from drf_yasg.utils import swagger_auto_schema
 
 from social_django.utils import load_strategy, load_backend
 from social_core.exceptions import MissingBackend
 from social_core.backends.oauth import BaseOAuth1
-
+from django.http import HttpResponseRedirect
+from django.conf import settings
+from django.core import mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from rest_framework import status
+from rest_framework.generics import RetrieveUpdateAPIView,\
+    CreateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, RegistrationSerializer,
                           UserSerializer, SocialAuthenticationSerializer,
-                          CreateEmailVerificationSerializer)
+                          CreateEmailVerificationSerializer,
+                          PasswordChangeSerializer,
+                          PasswordResetSerializer, PasswordResetTokenSerializer)
 from .utils import validate_image
 from authors.apps.core.utils import TokenHandler
-from .models import User
+
+from .models import User, PasswordResetToken
 
 
 class RegistrationAPIView(APIView):
@@ -47,7 +48,6 @@ class RegistrationAPIView(APIView):
         # your own work later on. Get familiar with it.
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
-
         user_email = serializer.validated_data['email']
         username = serializer.validated_data['username']
         callback = {'url': serializer.validated_data['callback_url']}
@@ -286,3 +286,88 @@ class CreateEmailVerificationTokenAPIView(APIView):
         message = {'message': 'New verification token created. Please proceed to your email ' + # noqa
                    user_email + ' to verify your account.'}
         return Response(message, status=status.HTTP_201_CREATED)
+
+
+class PasswordResetView(APIView):
+    """
+    post:
+        Get a user's email where password reset link will be sent.
+    """
+    def post(self, request):
+        data = request.data.get('payload')
+        serializer = PasswordResetSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        user_email = data['email']
+        callback_url = data['callback_url']
+        message = "A password reset link has been sent to your email."
+        try:
+            user = User.objects.get(email=user_email)
+            user_id = user.id
+            payload = {
+
+                "email": user_email,
+                "callback_url": callback_url
+            }
+            token = TokenHandler().create_verification_token(payload)
+            token_data = {
+                "user": user_id,
+                "token": token
+            }
+            serializer = PasswordResetTokenSerializer(data=token_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            TokenHandler().send_password_reset_link(user_email,
+                                                    token, callback_url)
+            return Response({"message": message},
+                            status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response(
+                {"message": message},
+                status=status.HTTP_200_OK
+            )
+
+    def put(self, request):
+        """
+         put:
+             Update a user's password with a new password.
+         """
+        try:
+            data = request.data.get('user_password')
+            serializer = PasswordChangeSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            token = data['token']
+            user = PasswordResetToken.objects.get(token=token)
+            is_valid = user.is_valid
+            if is_valid:
+                credentials = TokenHandler().validate_token(token)
+                password = data['password']
+                confirm_password = data['confirm_password']
+
+                if password != confirm_password:
+                    return Response({"message": "Passwords do not Match"})
+
+                serializer = PasswordChangeSerializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer = PasswordChangeSerializer(instance=User,
+                                                      data=data, partial=True)
+                serializer = User.objects.get(email=credentials['email'])
+                serializer.set_password(password)
+                serializer.save()
+                user.is_valid = False
+                user.save()
+                return Response(
+                    {'message': 'Your password has been changed.'},
+                    status=status.HTTP_202_ACCEPTED)
+
+            else:
+                return Response(
+                    {'message': 'Sorry, we couldn\'t find that password reset'
+                     ' key in our database. Please send another request.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        except PasswordResetToken.DoesNotExist:
+            return Response(
+                {'message': 'A user with the given token does not exist.'},
+                status=status.HTTP_404_NOT_FOUND
+            )

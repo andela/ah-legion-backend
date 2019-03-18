@@ -57,7 +57,8 @@ class JWTAuthenticationTest(TestCase):
             res.data['detail'], 'Invalid token provided. Authentication failure.')
 
     def test_failure_if_user_does_not_exist(self):
-        """We register a user to get the token, then delete the user from the database. When a user tries to pass the token to access the endpoint, they should be forbidden from proceeding."""
+        """We register a user to get the token, then delete the user from the database.
+        When a user tries to pass the token to access the endpoint, they should be forbidden from proceeding."""
         test_user = User.objects.create(
             username='test_user', email='test_user@mail.com', password='password')
         test_token = test_user.token

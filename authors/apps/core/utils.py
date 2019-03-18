@@ -6,6 +6,9 @@ from django.conf import settings
 
 from rest_framework import exceptions
 
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+
 
 class TokenHandler:
     """This class contains the methods for creating custom
@@ -53,3 +56,15 @@ class TokenHandler:
             return msg
 
         return decoded_token
+
+    def send_password_reset_link(self, to_email, token, callback_url):
+        domain = settings.DOMAIN
+        html_content = render_to_string('password_reset.html',
+                                        {'callback_url': callback_url,
+                                         'token': token, 'domain': domain})
+        subject = 'Reset your Author\'s Haven Password'
+        from_email = settings.EMAIL_HOST_USER
+        msg = EmailMessage(subject, html_content, from_email, [to_email])
+        msg.content_subtype = 'html'
+        msg.send()
+

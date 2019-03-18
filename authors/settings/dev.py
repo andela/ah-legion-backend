@@ -16,3 +16,12 @@ DATABASES = {
         'PORT': '',
     }
 }
+
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
+DOMAIN = config('DOMAIN', default='')
+EMAIL_HOST = config('EMAIL_HOST', default='localhost')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_PORT = config('EMAIL_PORT')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS')
+FROM_EMAIL = config('EMAIL_FROM', default='verify@authorsheaven.com')

@@ -3,7 +3,7 @@ from django.core.validators import RegexValidator, URLValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from .models import User
+from .models import User, PasswordResetToken
 from authors.apps.profiles.serializers import ProfileSerializer
 
 
@@ -261,3 +261,53 @@ class CreateEmailVerificationSerializer(serializers.Serializer):
             'username': username,
             'callback_url': callback_url
         }
+
+
+class PasswordResetSerializer(serializers.ModelSerializer):
+    """Handles serialization and deserialization of email
+     where password reset link will be sent."""
+    email = serializers.EmailField(required=True)
+    callback_url = serializers.URLField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'callback_url', ]
+        extra_kwargs = {
+            'email': {
+                'read_only': True
+            }
+
+        }
+
+
+class PasswordChangeSerializer(serializers.ModelSerializer):
+    """Handles serialization and deserialization of new password."""
+
+    password = serializers.CharField(
+        max_length=128,
+        min_length=8,
+        write_only=True,
+        required=True,
+        validators=[RegexValidator(
+            regex='^[a-zA-Z0-9]*$',
+            message='Password should be alphanumeric',
+            code='invalid_password')],
+        error_messages={
+            'min_length': 'Password should be at least 8 characters long',
+            'max_length': 'Password should not be longer than 128 characters',
+            'blank': 'Password field cannot be blank',
+            'required': 'Password is required'
+
+        }
+    )
+
+    class Meta:
+        model = User
+        fields = ['password']
+
+
+class PasswordResetTokenSerializer(serializers.ModelSerializer):
+    """Handles serialization and deserialization of password reset token."""
+    class Meta:
+        model = PasswordResetToken
+        fields = ['user', 'token', 'is_valid']
