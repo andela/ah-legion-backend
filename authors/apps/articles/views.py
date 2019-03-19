@@ -1,20 +1,23 @@
-from rest_framework import (
-    generics, mixins, status
-)
-from rest_framework.views import APIView
-
-from rest_framework.permissions import (
-    AllowAny, IsAuthenticated,
-)
-from rest_framework.response import Response
+from rest_framework import generics, mixins
+from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
-from .renderers import ArticleJSONRenderer
-from .serializers import TheArticleSerializer, LikesSerializer
-from .models import Article, Like
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView, status
+
 from authors.apps.core.views import BaseManageView
 
+from .models import Article, Like, ThreadedComment
+from .permissions import CanCreateComment, CanEditComment
+from .renderers import ArticleJSONRenderer, CommentJSONRenderer
+from .serializers import (ArticleCommentInputSerializer,
+                          CommentCommentInputSerializer,
+                          EmbededCommentOutputSerializer,
+                          LikesSerializer,
+                          TheArticleSerializer,
+                          ThreadedCommentOutputSerializer)
 
-# Create your views here.
+
 class CreateArticleView(mixins.CreateModelMixin,
                         generics.GenericAPIView):
     queryset = Article.objects.all()
@@ -33,14 +36,11 @@ class CreateArticleView(mixins.CreateModelMixin,
 
         serializer = TheArticleSerializer(data=payload)
         serializer.is_valid(raise_exception=True)
-
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class GetArticlesView(
-    mixins.ListModelMixin, generics.GenericAPIView
-):
+class GetArticlesView(mixins.ListModelMixin, generics.GenericAPIView):
     queryset = Article.objects.all()
     permission_classes = (AllowAny,)
     renderer_classes = (ArticleJSONRenderer,)
@@ -69,9 +69,8 @@ class GetArticlesView(
         return paginator.get_paginated_response(serializer.data)
 
 
-class GetAnArticleView(
-    mixins.RetrieveModelMixin, generics.GenericAPIView
-):
+class GetAnArticleView(mixins.RetrieveModelMixin,
+                       generics.GenericAPIView):
     queryset = Article.objects.all()
     permission_classes = (AllowAny,)
     renderer_classes = (ArticleJSONRenderer,)
@@ -98,9 +97,8 @@ class GetAnArticleView(
         )
 
 
-class UpdateAnArticleView(
-    mixins.UpdateModelMixin, generics.GenericAPIView
-):
+class UpdateAnArticleView(mixins.UpdateModelMixin,
+                          generics.GenericAPIView):
     queryset = Article.objects.all()
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ArticleJSONRenderer,)
@@ -310,3 +308,115 @@ class GetArticleLikesView(APIView):
             "dislikes": dislikes_count,
         }
         return Response(data=likes_dislikes, status=status.HTTP_200_OK)
+
+
+class FetchArticleMixin:
+    """
+    Provide get_article() method that returns
+    the article from the url.
+    """
+    def get_article(self):
+        article = get_object_or_404(Article, slug=self.kwargs['article_slug'])
+        return article
+
+
+class CommentListCreateView(FetchArticleMixin, APIView):
+    """
+    Create new comment.
+    """
+    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (CanCreateComment,)
+
+    def get(self, request, *args, **kwargs):
+        article = self.get_article()
+        comments = ThreadedComment.active_objects.for_article(article)
+        serializer = ThreadedCommentOutputSerializer(
+            comments, context={'current_user': request.user}, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data.copy()
+        article = self.get_article()
+        user = request.user
+        data["article"] = article.id
+        data["author"] = user.id
+        serializer = ArticleCommentInputSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save()
+        response_serializer = ThreadedCommentOutputSerializer(
+            comment, context={'current_user': request.user})
+        return Response(response_serializer.data,
+                        status=status.HTTP_201_CREATED)
+
+
+class CommentRetrieveEditDeleteView(FetchArticleMixin,
+                                    generics.GenericAPIView):
+    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (CanEditComment,)
+
+    def get_queryset(self):
+        article = self.get_article()
+        return ThreadedComment.active_objects.for_article(article)
+
+    def get(self, request, *args, **kwargs):
+        """Return single a comment."""
+        comment = self.get_object()
+        serializer = ThreadedCommentOutputSerializer(
+            comment, context={'current_user': request.user})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        """Create a comment on another comment."""
+        data = request.data.copy()
+        commented_comment = self.get_object()
+        if commented_comment.for_comment():
+            msg = {'message': 'Sorry, you cannot make'
+                   ' a comment on this comment'}
+            return Response(msg, status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        article = self.get_article()
+        data["comment"] = commented_comment.id
+        data["author"] = user.profile.id
+        data["article"] = article.id
+        serializer = CommentCommentInputSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save()
+        response_serializer = EmbededCommentOutputSerializer(
+            comment, context={'current_user': request.user})
+        return Response(response_serializer.data, status.HTTP_201_CREATED)
+
+    def put(self, request, *args, **kwargs):
+        """Edit all fields in a comment."""
+        data = request.data.copy()
+        comment = self.get_object()
+        data["article"] = comment.article.id
+        data["author"] = comment.author.id
+        if comment.for_comment():
+            data["comment"] = comment.comment.id
+        serializer = ArticleCommentInputSerializer(comment, data=data)
+        serializer.is_valid(raise_exception=True)
+        updated_comment = serializer.save()
+        response_serializer = ThreadedCommentOutputSerializer(
+            updated_comment, context={'current_user': request.user})
+        return Response(response_serializer.data,
+                        status=status.HTTP_202_ACCEPTED)
+
+    def patch(self, request, *args, **kwargs):
+        """Edit one field in a comment."""
+        data = request.data.copy()
+        comment = self.get_object()
+        serializer = ArticleCommentInputSerializer(comment, data=data,
+                                                   partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated_comment = serializer.save()
+        response_serializer = ThreadedCommentOutputSerializer(
+            updated_comment, context={'current_user': request.user})
+        return Response(response_serializer.data,
+                        status=status.HTTP_202_ACCEPTED)
+
+    def delete(self, request, *args, **kwargs):
+        """Soft delete a comment."""
+        comment = self.get_object()
+        comment.soft_delete()
+        return Response({"detail": "comment deleted"},
+                        status=status.HTTP_200_OK)

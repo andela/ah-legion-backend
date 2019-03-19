@@ -38,12 +38,19 @@ schema_view = get_schema_view(
 )
 
 
+api_patterns = [
+    path('articles/', include('authors.apps.articles.urls',
+                              namespace='articles')),
+    path('profiles/', include('authors.apps.profiles.urls',
+                              namespace='profiles')),
+    path('', include('authors.apps.authentication.urls',
+                     namespace='authentication')),
+]
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('authors.apps.authentication.urls',
-                         namespace='authentication')),
-    path('api/', include('authors.apps.profiles.urls',
-                         namespace='profiles')),
+    path('api/', include(api_patterns)),
     url(r'^swagger(?P<format>\.json|\.yaml)$',
         schema_view.without_ui(cache_timeout=0),
         name='schema-json'),
@@ -51,6 +58,4 @@ urlpatterns = [
         name='schema-swagger-ui'),
     url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0),
         name='schema-redoc'),
-
-    path('api/', include('authors.apps.articles.urls',)),
 ]

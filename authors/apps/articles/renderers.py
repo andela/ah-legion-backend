@@ -1,7 +1,10 @@
 import json
+
 from cloudinary import CloudinaryImage
+
 from rest_framework.renderers import JSONRenderer
 from rest_framework.utils.serializer_helpers import ReturnDict
+
 from ..authentication.models import User
 
 
@@ -59,3 +62,13 @@ class ArticleJSONRenderer(JSONRenderer):
                     'Article': data
                 })
 
+
+class CommentJSONRenderer(JSONRenderer):
+    charset = 'utf-8'
+
+    def render(self, data, media_type=None, renderer_context=None):
+
+        if type(data) == ReturnDict:
+            return json.dumps({'Comment': data})
+
+        return json.dumps({'Comments': data})

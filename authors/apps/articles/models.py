@@ -1,7 +1,14 @@
+import readtime
+
 from django.conf import settings
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
+
+from authors.apps.core.abstract_models import TimeStamped
+from authors.apps.profiles.models import Profile
+
+from . import managers
 from .utils import generate_unique_slug
-import readtime
 
 
 class Article(models.Model):
@@ -57,3 +64,40 @@ class Like(models.Model):
     article_id = models.ForeignKey(
         Article, on_delete=models.CASCADE, related_name='likes')
     is_like = models.BooleanField()
+
+
+class ThreadedComment(TimeStamped):
+    """Comment model for articles and other comments."""
+    author = models.ForeignKey(Profile, related_name='article_comments',
+                               on_delete=models.CASCADE)
+    article = models.ForeignKey('Article', related_name='comments',
+                                on_delete=models.CASCADE)
+    comment = models.ForeignKey('self', related_name='comments', null=True,
+                                on_delete=models.CASCADE)
+    body = models.TextField(_("Body"))
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+    active_objects = managers.CommentQuerySet.as_manager()
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.author}: {self.body:10}...'
+
+    def soft_delete(self):
+        """Make a soft deletion by changing the is_active field."""
+        self.is_active = False
+        self.save()
+
+    def undo_soft_deletion(self):
+        """Undo a soft deleteion."""
+        self.is_active = True
+        self.save()
+
+    def for_comment(self):
+        """Check whether this comment is for another comment."""
+        if self.comment:
+            return True
+        return False
