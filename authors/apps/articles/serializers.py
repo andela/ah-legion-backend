@@ -3,7 +3,7 @@ from rest_framework import serializers
 from authors.apps.profiles.serializers import ProfileSerializer
 
 from .models import (Article, Favorite, Like, Snapshot,
-                     ThreadedComment, Rating)
+                     ThreadedComment, Rating, Tag)
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -15,7 +15,7 @@ class TheArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'title', 'body', 'draft', 'slug',
-            'reading_time', 'average_rating',
+            'reading_time', 'average_rating', 'tags',
             'editing', 'description', 'published', 'activated',
             "created_at", "updated_at", 'author'
         ]
@@ -23,7 +23,17 @@ class TheArticleSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         '''Create a new Article instance, given the accepted data.'''
-        article = Article.objects.create(**validated_data)
+        article_data = validated_data
+        tags_data = None
+        if 'tags' in validated_data.keys():
+            tags_data = article_data.pop("tags")
+        article = Article.objects.create(**article_data)
+
+        if tags_data:
+            for item in tags_data:
+                my_tag = Tag()
+                found = my_tag._create_tag(item)
+                article.tags.add(found)
         return article
 
     def update(self, instance, validated_data):
@@ -46,6 +56,11 @@ class TheArticleSerializer(serializers.ModelSerializer):
         instance.activated = validated_data.get(
             'activated', instance.activated
         )
+        if 'tags' in validated_data.keys() and len(validated_data['tags']) > 0:
+            this_tag = Tag()
+            new_tags = validated_data['tags']
+            this_tag._update_article_tags(instance, new_tags)
+
         instance.save()
         return instance
 

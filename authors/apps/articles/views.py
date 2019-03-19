@@ -8,7 +8,7 @@ from .serializers import (ArticleCommentInputSerializer,
                           ArticleRatingSerializer)
 from .renderers import ArticleJSONRenderer, CommentJSONRenderer
 from .permissions import CanCreateComment, CanEditComment
-from .models import Article, Like, ThreadedComment, Favorite, Rating
+from .models import Article, Like, ThreadedComment, Favorite, Rating, Tag
 from authors.apps.core.views import BaseManageView
 from rest_framework.views import APIView, status
 from rest_framework.response import Response
@@ -30,6 +30,16 @@ class CreateArticleView(mixins.CreateModelMixin,
 
     def create(self, request, *args, **kwargs):
         payload = request.data.get('article', {})
+        the_tags = payload.get("tagList", None)
+        tags_pk = []
+        if the_tags:
+            the_tags = payload.pop("tagList")
+            tag_object = Tag()
+            for item in the_tags:
+                my_tag = tag_object._create_tag(item)
+                tags_pk.append(my_tag.pk)
+            payload["tags"] = tags_pk
+
         # Decode token
         this_user = request.user
         payload['author'] = this_user.pk
@@ -54,9 +64,9 @@ class GetArticlesView(mixins.ListModelMixin, generics.GenericAPIView):
         # Decode token
         reply_not_found = {}
         paginator = self.pagination_class()
-        page = paginator.paginate_queryset(self.queryset, request)
         published_articles = Article.objects.filter(
             published=True, activated=True)
+        page = paginator.paginate_queryset(published_articles, request)
 
         if (len(published_articles) < 1):
             reply_not_found["detail"] = "No articles have been found."
@@ -107,7 +117,6 @@ class UpdateAnArticleView(mixins.UpdateModelMixin,
 
     def _edit_article(self, request, the_data):
         if self.get_object().author == request.user:
-
             if self.get_object().activated is False:
                 invalid_entry = {
                     "detail": "This article does not exist."
@@ -118,6 +127,16 @@ class UpdateAnArticleView(mixins.UpdateModelMixin,
                 )
 
             article_obj = self.get_object()
+            this_tags = the_data.get("tagList", None)
+            tags_pk = []
+            if this_tags:
+                this_tags = the_data.pop("tagList")
+                tag_object = Tag()
+                for item in this_tags:
+                    the_tag = tag_object._create_tag(item)
+                    tags_pk.append(the_tag.pk)
+                the_data["tags"] = tags_pk
+
             serialized = self.serializer_class(
                 article_obj, data=the_data, partial=True
             )

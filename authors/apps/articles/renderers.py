@@ -6,6 +6,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.utils.serializer_helpers import ReturnDict
 
 from ..authentication.models import User
+from ..articles.models import Tag
 
 
 class ArticleJSONRenderer(JSONRenderer):
@@ -13,6 +14,13 @@ class ArticleJSONRenderer(JSONRenderer):
     charset = 'utf-8'
 
     def _single_article_formatting(self, data):
+        tags = data.pop("tags")
+        tagList = []
+        for item in tags:
+            this_tag = Tag.objects.filter(pk=item).first()
+            tagList.append(this_tag.tag)
+        data["tagList"] = tagList
+
         author = User.objects.all().filter(
             pk=data['author']).first()
         the_data = {
