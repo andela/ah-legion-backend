@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from authors.apps.profiles.serializers import ProfileSerializer
 
-from .models import Article, Like, ThreadedComment
+from .models import Article, Like, Snapshot, ThreadedComment
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -73,21 +73,31 @@ class CommentCommentInputSerializer(serializers.ModelSerializer):
         extra_kwargs = {'comment': {'required': True}}
 
 
+class SnapshotSerializer(serializers.ModelSerializer):
+    """Serializer for displaying comment snapshots."""
+    class Meta:
+        model = Snapshot
+        fields = ('id', 'body', 'timestamp')
+
+
 class EmbededCommentOutputSerializer(serializers.ModelSerializer):
     """Seriliazes comment and gives output data."""
     author = ProfileSerializer()
+    edit_history = SnapshotSerializer(many=True, source='snapshots')
 
     class Meta:
         model = ThreadedComment
-        fields = ('id', 'created_at', 'updated_at', 'body', 'author')
+        fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
+                  'edit_history')
 
 
 class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
     """Seriliazes comment and gives output data."""
     author = ProfileSerializer()
     comments = EmbededCommentOutputSerializer(many=True)
+    edit_history = SnapshotSerializer(many=True, source='snapshots')
 
     class Meta:
         model = ThreadedComment
-        fields = ('id', 'created_at', 'updated_at', 'body', 'author',
-                  'comments')
+        fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
+                  'edit_history', 'comments')

@@ -2,6 +2,7 @@ import readtime
 
 from django.conf import settings
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 from authors.apps.core.abstract_models import TimeStamped
@@ -101,3 +102,21 @@ class ThreadedComment(TimeStamped):
         if self.comment:
             return True
         return False
+
+    @cached_property
+    def edited(self):
+        """Return whether the comment has been edited."""
+        return self.snapshots.all().exists()
+
+
+class Snapshot(models.Model):
+    """Model to take snapshots of comments everytime they are edited."""
+    timestamp = models.DateTimeField(auto_now_add=True)
+    comment = models.ForeignKey('ThreadedComment', related_name='snapshots',
+                                on_delete=models.CASCADE)
+    body = models.TextField(_("Body"))
+
+    class Meta:
+        ordering = ('-timestamp',)
+        verbose_name = _("Comment Snapshot")
+        verbose_name_plural = _("Comment Snapshots")
