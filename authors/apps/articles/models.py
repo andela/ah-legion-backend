@@ -120,3 +120,12 @@ class Snapshot(models.Model):
         ordering = ('-timestamp',)
         verbose_name = _("Comment Snapshot")
         verbose_name_plural = _("Comment Snapshots")
+
+
+class Favorite(models.Model):
+    """Implement storage of favorites"""
+    user_id = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='favorites')
+    article_id = models.ForeignKey(
+        Article, on_delete=models.CASCADE, related_name='favorites')

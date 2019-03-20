@@ -39,6 +39,8 @@ class ArticlesBaseTest(APITestCase):
         retrieved_article.published = True
         retrieved_article.save()
         self.like_article_url = '/api/articles/{}/like/'.format(self.slug)
+        self.favorite_article_url = '/api/articles/{}/favorite/'.format(self.slug)
+        self.get_favorites_url = reverse('articles:get_favorites')
 
 
 
