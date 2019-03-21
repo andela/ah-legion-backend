@@ -43,7 +43,7 @@ update_rating_data = {"rating": {
 }
 
 valid_data_rasponse = {
-    "message": "Article rated."
+    "message": "You have rated this article: how-to-train-your-dragon"
 }
 
 author_rating_data_response = {

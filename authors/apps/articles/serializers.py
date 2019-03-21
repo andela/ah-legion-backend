@@ -1,14 +1,15 @@
+from django.db.models import Avg
+from rest_framework import serializers
 from authors.apps.profiles.serializers import ProfileSerializer
 from authors.apps.profiles.models import Profile
 from .models import (Article, Favorite, Like, Snapshot,
                      ThreadedComment, Rating, Tag, Bookmark)
-from rest_framework import serializers
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
 
     reading_time = serializers.ReadOnlyField(source='get_reading_time')
-    average_rating = serializers.ReadOnlyField(source='get_average_rating')
+    average_rating = serializers.SerializerMethodField()
     author = ProfileSerializer(read_only=True)
 
     class Meta:
@@ -66,6 +67,19 @@ class TheArticleSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+    def get_average_rating(self, obj):
+        """
+            Returns average rating
+        """
+        query = Rating.objects.filter(
+            article__pk=obj.pk)
+
+        if query.count() > 0:
+            average = query.aggregate(Avg('value'))
+
+            return round(average['value__avg'], 1)
+        return "This article has not been rated."
 
 
 class LikesSerializer(serializers.ModelSerializer):

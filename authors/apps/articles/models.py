@@ -10,7 +10,6 @@ from authors.apps.profiles.models import Profile
 
 from . import managers
 from .utils import generate_unique_slug
-from django.db.models import Avg
 from cloudinary import CloudinaryImage
 from django.utils.text import slugify
 
@@ -50,15 +49,6 @@ class Article(models.Model):
         unit = " minutes"
 
         return str(reading_time) + unit
-
-    def get_average_rating(self):
-        if Rating.objects.all().count() > 0:
-            rating = Rating.objects.all().aggregate(Avg('value'))
-            return round(rating['value__avg'], 1)
-        return "This article has not been rated."
-
-    class Meta:
-        ordering = ["-created_at", "-updated_at"]
 
 
 class Like(models.Model):
