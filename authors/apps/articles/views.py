@@ -350,8 +350,9 @@ class CommentListCreateView(FetchArticleMixin, APIView):
     def get(self, request, *args, **kwargs):
         article = self.get_article()
         comments = ThreadedComment.active_objects.for_article(article)
+        article_comments = comments.filter(comment__isnull=True)
         serializer = ThreadedCommentOutputSerializer(
-            comments, context={'current_user': request.user}, many=True)
+            article_comments, context={'current_user': request.user}, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
