@@ -43,8 +43,8 @@ api_patterns = [
                               namespace='articles')),
     path('profiles/', include('authors.apps.profiles.urls',
                               namespace='profiles')),
-    path('', include('authors.apps.authentication.urls',
-                     namespace='authentication')),
+    path('user/', include('authors.apps.authentication.urls',
+                          namespace='authentication')),
 ]
 
 
