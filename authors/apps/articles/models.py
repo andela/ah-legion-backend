@@ -10,6 +10,8 @@ from authors.apps.profiles.models import Profile
 
 from . import managers
 from .utils import generate_unique_slug
+from django.db.models import Avg
+from cloudinary import CloudinaryImage
 
 
 class Article(models.Model):
@@ -53,6 +55,12 @@ class Article(models.Model):
         unit = " minutes"
 
         return str(reading_time) + unit
+
+    def get_average_rating(self):
+        if Rating.objects.all().count() > 0:
+            rating = Rating.objects.all().aggregate(Avg('value'))
+            return round(rating['value__avg'], 1)
+        return "This article has not been rated."
 
     class Meta:
         ordering = ["-created_at", "-updated_at"]
@@ -129,3 +137,34 @@ class Favorite(models.Model):
         related_name='favorites')
     article_id = models.ForeignKey(
         Article, on_delete=models.CASCADE, related_name='favorites')
+
+
+class Rating(models.Model):
+    """This class creates an article rating model."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='ratings',
+        on_delete=models.CASCADE
+    )
+    article = models.ForeignKey(
+        Article,
+        related_name='ratings',
+        on_delete=models.CASCADE
+    )
+    value = models.IntegerField(null=False)
+    review = models.TextField(null=True, blank=True)
+    created = models.DateTimeField(auto_now=True)
+
+    def get_username(self):
+        """This method gets the username of the user rating an article."""
+        return self.user.username
+
+    def get_image(self):
+        """This method gets the image of the user rating an article."""
+        image_url = CloudinaryImage(str(self.user.profile.image)).build_url(
+            width=100, height=150, crop='fill')
+        return image_url
+
+    def __str__(self):
+        return "This is rating no: " + str(self.id)

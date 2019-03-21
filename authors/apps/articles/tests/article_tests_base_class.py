@@ -41,8 +41,8 @@ class ArticlesBaseTest(APITestCase):
         self.like_article_url = '/api/articles/{}/like/'.format(self.slug)
         self.favorite_article_url = '/api/articles/{}/favorite/'.format(self.slug)
         self.get_favorites_url = reverse('articles:get_favorites')
-
-
-
-
-
+        self.rate_url = '/api/articles/{}/rate/'.format(self.slug)
+        self.get_rate_url = '/api/articles/{}/ratings/'.format(self.slug)
+        self.non_existent_article = '/api/articles/hi/rate/'
+        self.get_non_existent_article = '/api/articles/hi/ratings/'
+        self.article_rating = '/api/articles/'

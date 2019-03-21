@@ -479,3 +479,51 @@ No additional parameters required
 ### Get Tags
 
 `GET /api/tags`
+
+## Create an Article Rating
+
+`POST /api/articles/<slug>/rate/`
+
+Example request body:
+
+```source-json
+{
+	"rating":{
+		"value":"3",
+		"review":"Quite interesting."
+	}
+}
+```
+
+Requires authentication
+
+Accepted fields: `value`, `review`
+
+## Update an Article Rating
+
+`PUT api/articles/<slug>/rate/`
+
+Example request body:
+
+```source-json
+{
+	"rating":{
+		"value":"4",
+		"review":"Quite interesting. I loved the ending."
+	}
+}
+```
+
+Requires authentication
+
+Accepted fields: `value`, `review`
+
+## Get an Article's Ratings
+
+`GET api/articles/<slug>/ratings/`
+
+
+Returns all reviews attached to an article
+
+
+
