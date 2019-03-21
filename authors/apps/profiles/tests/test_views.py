@@ -79,7 +79,8 @@ class TestProfileViews(TestCase):
         """
 
         response = self.test_client.post(
-            "/api/users/login/", data=json.dumps(self.data), content_type='application/json')
+            reverse("authentication:login"),
+            data=json.dumps(self.data), content_type='application/json')
         token = response.json()['user']['token']
         return token
 
@@ -92,7 +93,8 @@ class TestProfileViews(TestCase):
         Returns: an issued post request to the user registration endpoint
         """
         return self.test_client.post(
-            "/api/users/", data=json.dumps(user_details_dict), content_type='application/json')
+            reverse("authentication:register"),
+            data=json.dumps(user_details_dict), content_type='application/json')
     
     def follow_user(self, username, token):
         """This method sends a follow request to a user"""
