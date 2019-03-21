@@ -42,7 +42,9 @@ class ArticleViewsTestCase(TestCase):
                 "title": "How to train your dragon",
                 "description": "Ever wonder how?",
                 "body": "You have to believe",
-                "draft": "Giving exellence high priority"
+                "draft": "Giving exellence high priority",
+                "tagList": ["dragons", "training"],
+ 
             }
         }
 
@@ -207,8 +209,9 @@ class ArticleViewsTestCase(TestCase):
             "article": {
                 "title": "I am a champion",
                 "description": "In God we trust.",
-                "body": "One step infron of the other",
+                "body": "One step infront of the other",
                 "draft": "Giving exellence high priority",
+                "tagList": ["andela", "The OG"],
                 "activated": True
             }
         }

@@ -12,6 +12,7 @@ from . import managers
 from .utils import generate_unique_slug
 from django.db.models import Avg
 from cloudinary import CloudinaryImage
+from django.utils.text import slugify
 
 
 class Article(models.Model):
@@ -25,6 +26,7 @@ class Article(models.Model):
     description = models.CharField(max_length=255, null=True)
     published = models.BooleanField(default=False)
     activated = models.BooleanField(default=True)
+    tags = models.ManyToManyField('Tag', related_name='articles', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     author = models.ForeignKey(
@@ -168,3 +170,72 @@ class Rating(models.Model):
 
     def __str__(self):
         return "This is rating no: " + str(self.id)
+
+
+class Tag(models.Model):
+    tag = models.CharField(max_length=100, db_index=True, unique=True)
+    slug = models.SlugField(max_length=240, db_index=True, unique=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.tag)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.slug
+
+    objects = models.Manager()
+
+    def _create_tag(self, tag_name):
+        '''
+        This method checks if the tag exists and returns the tag object
+        else it creates a new tag object and returns it.
+        '''
+        found = Tag.objects.filter(slug=slugify(tag_name))
+        if len(found) < 1:
+            Tag.objects.create(tag=tag_name)
+        return Tag.objects.filter(slug=slugify(tag_name)).first()
+
+    def _remove_tags_without_articles(self, tag_name):
+        '''This method takes a tag name and checks if the tag has
+        associated articles and if not it deletes the tag from the
+        database in order to save on database space.
+        '''
+        found = Tag.objects.filter(slug=slugify(tag_name))
+        if found and len(found) > 0:
+            the_tag = Tag.objects.filter(slug=slugify(tag_name)).first()
+            its_articles = the_tag.articles.all()
+            if len(its_articles) < 1:
+                the_tag.delete()
+                return True
+        return False
+
+    def _update_article_tags(self, instance, new_tag_list):
+        '''This method is used to update the tags of an
+        article and do general tag mainenance.'''
+        old_tags = instance.tags.all()
+        old_tag_slugs = [tag.slug for tag in old_tags]
+        new_tag_slugs = [slugify(tag) for tag in new_tag_list]
+        # Check for items in the old list that are not in the new
+        # list and remove them.
+        tags_to_remove = list(set(old_tag_slugs) - set(new_tag_slugs))
+        remove_tag_objects = [
+            tag for tag in old_tags if (
+                tag.slug in tags_to_remove
+            )
+        ]
+        for item in remove_tag_objects:
+            # Remove tag from article
+            instance.tags.remove(item)
+            # Check if tag has any other article else delete the tag.
+            self._remove_tags_without_articles(item.tag)
+        new_slugs = list(set(new_tag_slugs) - set(old_tag_slugs))
+        tags_to_add = [tag for tag in new_tag_list if(
+            slugify(tag) in new_slugs
+        )]
+        for item in tags_to_add:
+            # Create tag if tag does not exist
+            the_tag = self._create_tag(item)
+            # Add the tag to the article instance.
+            instance.tags.add(the_tag)
+        return True
