@@ -3,7 +3,7 @@ from django.test import TestCase
 from authors.apps.core.factories import UserFactory
 
 from ..factories import ArticleFactory
-from ..models import Snapshot, ThreadedComment
+from ..models import CommentLike, Snapshot, ThreadedComment
 
 
 class CommentMethodTests(TestCase):
@@ -34,6 +34,14 @@ class CommentMethodTests(TestCase):
         self.assertEqual(comment.is_active, False)
         comment.undo_soft_deletion()
         self.assertEqual(comment.is_active, True)
+
+    def test_getting_count_of_likes_on_a_comment(self):
+        comment = ThreadedComment.objects.create(author=self.user1.profile,
+                                        article=self.article1)
+        self.assertEqual(comment.total_likes, 0)
+        like = CommentLike.objects.create(user=self.user1, comment=comment)
+        like.save()
+        self.assertEqual(comment.total_likes, 1)
 
 
 class CommentSnapshotSignalTests(TestCase):

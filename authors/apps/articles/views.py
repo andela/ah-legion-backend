@@ -1,5 +1,6 @@
 from .serializers import (ArticleCommentInputSerializer,
                           CommentCommentInputSerializer,
+                          CommentLikeSerializer,
                           EmbededCommentOutputSerializer,
                           LikesSerializer,
                           TheArticleSerializer,
@@ -506,3 +507,30 @@ class GetUserFavoritesView(APIView):
             "favorites": favorite_articles
         }
         return Response(data=favorites, status=status.HTTP_200_OK)
+
+
+class CommentLikeCreateDeleteView(FetchArticleMixin, generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        article = self.get_article()
+        return ThreadedComment.active_objects.for_article(article)
+
+    def put(self, request, *args, **kwargs):
+        comment = self.get_object()
+        data = request.data.copy()
+        data['user'] = request.user.id
+        data['comment'] = comment.id
+        serializer = CommentLikeSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "You now like this comment"},
+                        status.HTTP_202_ACCEPTED)
+
+    def delete(self, request, *args, **kwargs):
+        comment = self.get_object()
+        queryset = comment.likes.filter(comment=comment)
+        comment_like = get_object_or_404(queryset, user=request.user)
+        comment_like.delete()
+        return Response({"message": "You've unliked this comment"},
+                        status.HTTP_202_ACCEPTED)

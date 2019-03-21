@@ -108,6 +108,10 @@ class ThreadedComment(TimeStamped):
         """Return whether the comment has been edited."""
         return self.snapshots.all().exists()
 
+    @property
+    def total_likes(self):
+        return self.likes.count()
+
 
 class Snapshot(models.Model):
     """Model to take snapshots of comments everytime they are edited."""
@@ -129,3 +133,16 @@ class Favorite(models.Model):
         related_name='favorites')
     article_id = models.ForeignKey(
         Article, on_delete=models.CASCADE, related_name='favorites')
+
+
+class CommentLike(models.Model):
+    """A like of a comment model."""
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             related_name="comment_likes",
+                             on_delete=models.CASCADE)
+    comment = models.ForeignKey('ThreadedComment', related_name="likes",
+                                on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('comment', 'user')

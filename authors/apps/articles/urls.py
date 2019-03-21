@@ -1,5 +1,7 @@
-from . import views
 from django.urls import path
+
+from . import views
+
 
 app_name = 'articles'
 
@@ -23,6 +25,9 @@ urlpatterns = [
     path('<slug:article_slug>/comments/<pk>/',
          views.CommentRetrieveEditDeleteView.as_view(),
          name="comment"),
+    path('<slug:article_slug>/comments/<pk>/likes/',
+         views.CommentLikeCreateDeleteView.as_view(),
+         name="comment_likes"),
     path('<slug:slug>/likes/',
          views.GetArticleLikesView.as_view(), name="get_likes"),
 

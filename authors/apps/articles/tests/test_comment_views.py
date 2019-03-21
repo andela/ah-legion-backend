@@ -11,8 +11,9 @@ from rest_framework.test import APIRequestFactory
 from authors.apps.core.factories import UserFactory
 
 from ..factories import ArticleFactory
-from ..models import Article, ThreadedComment
-from ..views import CommentListCreateView, CommentRetrieveEditDeleteView
+from ..models import Article, ThreadedComment, CommentLike
+from ..views import (CommentListCreateView, CommentRetrieveEditDeleteView,
+                     CommentLikeCreateDeleteView)
 
 
 class CommentListCreateViewTest(TestCase):
@@ -213,3 +214,35 @@ class CommentListCreateViewTest(TestCase):
         force_authenticate(request2, user=self.user1)
         response2 = view(request2, article_slug=self.article.slug, pk=comment.pk)
         self.assertEqual(response2.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class CommentLikeDeleteViewTests(TestCase):
+
+    def setUp(self):
+        self.user1 = UserFactory.create()
+        self.article = ArticleFactory.create(author=self.user1)
+        self.factory = APIRequestFactory()
+
+
+    def test_liking_a_comment(self):
+        comment = ThreadedComment.objects.create(
+            author=self.user1.profile, article=self.article)
+        view = CommentLikeCreateDeleteView.as_view()
+        request = self.factory.put(
+            reverse("articles:comment_likes", args=[self.article.slug, comment.pk]),
+            format='json')
+        force_authenticate(request, user=self.user1)
+        response = view(request, article_slug=self.article.slug, pk=comment.pk)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+    def test_unliking_a_comment(self):
+        comment = ThreadedComment.objects.create(
+            author=self.user1.profile, article=self.article)
+        like = CommentLike.objects.create(comment=comment, user=self.user1)
+        view = CommentLikeCreateDeleteView.as_view()
+        request = self.factory.delete(
+            reverse("articles:comment_likes", args=[self.article.slug, comment.pk]),
+            format='json')
+        force_authenticate(request, user=self.user1)
+        response = view(request, article_slug=self.article.slug, pk=comment.pk)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)

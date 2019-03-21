@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from authors.apps.profiles.serializers import ProfileSerializer
 
-from .models import Article, Favorite, Like, Snapshot, ThreadedComment
+from .models import (Article, CommentLike, Favorite, Like, Snapshot,
+                     ThreadedComment)
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -80,18 +81,28 @@ class SnapshotSerializer(serializers.ModelSerializer):
         fields = ('id', 'body', 'timestamp')
 
 
-class EmbededCommentOutputSerializer(serializers.ModelSerializer):
+class CommentSerializerMixin(serializers.ModelSerializer):
+    """Adds the is_liked serializer method field."""
+    is_liked = serializers.SerializerMethodField()
+    likes = serializers.Field(source='total_likes')
+
+    def get_is_liked(self, obj):
+        current_user = self.context.get('current_user', None)
+        return obj.likes.filter(user__id__in=[current_user.id]).exists()
+
+
+class EmbededCommentOutputSerializer(CommentSerializerMixin):
     """Seriliazes comment and gives output data."""
     author = ProfileSerializer()
     edit_history = SnapshotSerializer(many=True, source='snapshots')
 
     class Meta:
         model = ThreadedComment
-        fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
-                  'edit_history')
+        fields = ('id', 'created_at', 'updated_at', 'edited', 'is_liked',
+                  'total_likes', 'body', 'author', 'edit_history')
 
 
-class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
+class ThreadedCommentOutputSerializer(CommentSerializerMixin):
     """Seriliazes comment and gives output data."""
     author = ProfileSerializer()
     comments = EmbededCommentOutputSerializer(many=True)
@@ -99,8 +110,8 @@ class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ThreadedComment
-        fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
-                  'edit_history', 'comments')
+        fields = ('id', 'created_at', 'updated_at', 'edited', 'is_liked',
+                  'total_likes', 'body', 'author', 'edit_history', 'comments')
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -113,3 +124,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class CommentLikeSerializer(serializers.ModelSerializer):
+    """Serializes comment_like input."""
+    class Meta:
+        model = CommentLike
+        fields = ('id', 'user', 'comment')
+        read_only_fields = ('id',)
