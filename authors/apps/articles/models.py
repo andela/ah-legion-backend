@@ -245,3 +245,27 @@ class Bookmark(models.Model):
     class Meta:
         verbose_name = _("Article bookmark")
         verbose_name_plural = _("Article bookmarks")
+
+
+class ReportArticle(models.Model):
+    """ model to hold report instances """
+
+    article = models.ForeignKey(
+        Article,
+        to_field='slug',
+        on_delete=models.CASCADE
+    )
+    message = models.CharField(
+        max_length=225, null=False
+    )
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='reports',
+        on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return self.message
+
+    def get_username(self):
+        return self.reporter.username

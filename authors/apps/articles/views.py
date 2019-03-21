@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView, status
 
 from .permissions import CanCreateComment, CanEditComment
-from .renderers import ArticleJSONRenderer, CommentJSONRenderer
+from .renderers import (ArticleJSONRenderer, CommentJSONRenderer,
+                        ReportJSONRenderer)
 from .serializers import (ArticleCommentInputSerializer,
                           CommentCommentInputSerializer,
                           EmbededCommentOutputSerializer,
@@ -15,9 +16,10 @@ from .serializers import (ArticleCommentInputSerializer,
                           ThreadedCommentOutputSerializer,
                           FavoriteSerializer, RatingSerializer,
                           ArticleRatingSerializer, BookmarkSerializer,
-                          PersonalArticlesSerializer)
+                          PersonalArticlesSerializer, ReportSerializer)
 from .models import (Article, Bookmark, Like,
-                     ThreadedComment, Favorite, Rating, Tag)
+                     ThreadedComment, Favorite, Rating,
+                     Tag, ReportArticle)
 from authors.apps.core.views import BaseManageView
 from ..articles.utils import edit_article
 
@@ -704,3 +706,69 @@ class GetUserBookmarksView(APIView):
             "bookmarks": bookmarked_articles
         }
         return Response(data=bookmarks, status=status.HTTP_200_OK)
+
+
+class GetAllArticleReports(generics.ListAPIView):
+    """ admin class for getting all article reports """
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ReportJSONRenderer,)
+
+    def get(self, request):
+        """ get endpoint for fetching actual reports """
+        user = request.user
+        if user.is_staff is False:
+            return Response({
+                "error": "only admins may view all reports"
+            }, status.HTTP_401_UNAUTHORIZED)
+        all_reports = ReportArticle.objects.all()
+        serializer = self.serializer_class(all_reports, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+
+class ReportAnArticle(APIView):
+    """
+    User class for reporting articles
+    a user may report olny one article ata time
+    """
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ReportJSONRenderer,)
+
+    def post(self, request, slug):
+        """ post method for creating a single report instance """
+        data = request.data
+        user = request.user
+        message = data.get('message')
+        article = Article.objects.filter(
+            slug=slug, published=True, activated=True).first()
+
+        if not article:
+            return Response({
+                "message": "you cannot report this article, its does not exist"
+            }, status.HTTP_404_NOT_FOUND)
+        new_report_data = {
+            'message': message,
+            'reporter': user.id,
+            'article': article.slug
+        }
+
+        serializer = self.serializer_class(data=new_report_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AllUserArticleReports(generics.ListAPIView):
+    """ get all reports made by a specific user """
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ReportJSONRenderer,)
+
+    def get(self, request):
+        user = request.user
+        # dedicated to Etole James, find him here: https://github.com/Etomovich
+        the_user_reports = user.reports.all()
+        serializer = self.serializer_class(
+            the_user_reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

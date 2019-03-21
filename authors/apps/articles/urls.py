@@ -4,6 +4,8 @@ from . import views
 app_name = 'articles'
 
 urlpatterns = [
+    path('reports/',
+         views.GetAllArticleReports.as_view(), name="get-all-reports"),
     path('create/', views.CreateArticleView.as_view(),
          name="create_article"),
     path('', views.GetArticlesView.as_view(), name="get_article"),
@@ -39,4 +41,6 @@ urlpatterns = [
          views.BookmarkView.as_view(), name="create_bookmark"),
     path('user/bookmarks/',
          views.GetUserBookmarksView.as_view(), name="get_bookmarks"),
+    path('<slug:slug>/report/',
+         views.ReportAnArticle.as_view(), name="report-article"),
 ]
