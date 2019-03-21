@@ -16,7 +16,7 @@ class CommentRendererTest(TestCase):
 
     def setUp(self):
         self.user1 = UserFactory.create()
-        self.article1 = ArticleFactory.create(author=self.user1)
+        self.article1 = ArticleFactory.create(author=self.user1.profile)
         self.factory = APIRequestFactory()
 
     def test_comment_json_renderer(self):

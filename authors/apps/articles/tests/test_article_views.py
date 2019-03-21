@@ -109,7 +109,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo.status_code, status.HTTP_201_CREATED)
 
         # Publish article of user1
-        my_url = '/api/articles/{}/edit'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/publish/'.format(respo.data['slug'])
         respo1 = client.patch(
             my_url,
             **self.header_user1,
@@ -130,7 +130,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo.status_code, status.HTTP_201_CREATED)
 
         # Get an article that is not there
-        my_url = '/api/articles/{}'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/'.format(respo.data['slug'])
         respo1 = client.get(
             my_url,
             **self.header_user1,
@@ -139,7 +139,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo1.status_code, status.HTTP_404_NOT_FOUND)
 
         # Publish article of user1
-        my_url = '/api/articles/{}/edit'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/publish/'.format(respo.data['slug'])
         respo2 = client.patch(
             my_url,
             **self.header_user1,
@@ -148,7 +148,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo2.status_code, status.HTTP_200_OK)
 
         # Get an article that is there
-        my_url = '/api/articles/{}'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/'.format(respo.data['slug'])
         respo3 = client.get(
             my_url,
             **self.header_user1,
@@ -164,7 +164,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo.status_code, status.HTTP_201_CREATED)
 
         # Publish article of user1
-        my_url = '/api/articles/{}/edit'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/publish/'.format(respo.data['slug'])
         respo1 = client.patch(
             my_url,
             **self.header_user1,
@@ -173,6 +173,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
 
         # Delete article of user1
+        my_url = '/api/articles/{}/edit/'.format(respo.data['slug'])
         respo1 = client.delete(
             my_url,
             **self.header_user1,
@@ -197,7 +198,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo.status_code, status.HTTP_201_CREATED)
 
         # Publish article of user1
-        my_url = '/api/articles/{}/edit'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/publish/'.format(respo.data['slug'])
         respo1 = client.patch(
             my_url,
             **self.header_user1,
@@ -217,6 +218,7 @@ class ArticleViewsTestCase(TestCase):
         }
 
         # Try to update the article with wrong user
+        my_url = '/api/articles/{}/edit/'.format(respo.data['slug'])
         respo1 = client.put(
             my_url,
             update_input,
@@ -228,6 +230,20 @@ class ArticleViewsTestCase(TestCase):
                          'You are not the owner of the article.')
 
         # Try to update the article with right user
+        respo1 = client.put(
+            my_url,
+            update_input,
+            **self.header_user1,
+            format='json'
+        )
+        self.assertEqual(respo1.status_code, status.HTTP_200_OK)
+
+        #Update without taglist
+        update_input = {
+            "article": {
+                "title": "The PR raisers",
+            }
+        }
         respo1 = client.put(
             my_url,
             update_input,
@@ -251,7 +267,7 @@ class ArticleViewsTestCase(TestCase):
         self.assertEqual(respo.status_code, status.HTTP_201_CREATED)
 
         # Publish article of user1
-        my_url = '/api/articles/{}/edit'.format(respo.data['slug'])
+        my_url = '/api/articles/{}/publish/'.format(respo.data['slug'])
         respo1 = client.patch(
             my_url,
             **self.header_user1,

@@ -16,6 +16,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics, mixins
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
+from ..articles.utils import edit_article
 
 
 class CreateArticleView(mixins.CreateModelMixin,
@@ -41,10 +42,9 @@ class CreateArticleView(mixins.CreateModelMixin,
             payload["tags"] = tags_pk
 
         # Decode token
-        this_user = request.user
-        payload['author'] = this_user.pk
-
-        serializer = TheArticleSerializer(data=payload)
+        serializer = TheArticleSerializer(
+            data=payload, context={"current_user": request.user}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -75,7 +75,10 @@ class GetArticlesView(mixins.ListModelMixin, generics.GenericAPIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = self.serializer_class(page, many=True)
+        serializer = self.serializer_class(
+            page, many=True,
+            context={"current_user": request.user}
+        )
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -94,7 +97,9 @@ class GetAnArticleView(mixins.RetrieveModelMixin,
         ).first()
 
         if found_article is not None:
-            serialized = self.serializer_class(found_article)
+            serialized = self.serializer_class(
+                found_article, context={"current_user": request.user}
+            )
             return Response(
                 serialized.data,
                 status=status.HTTP_200_OK
@@ -115,64 +120,35 @@ class UpdateAnArticleView(mixins.UpdateModelMixin,
     serializer_class = (TheArticleSerializer)
     lookup_field = "slug"
 
-    def _edit_article(self, request, the_data):
-        if self.get_object().author == request.user:
-            if self.get_object().activated is False:
-                invalid_entry = {
-                    "detail": "This article does not exist."
-                }
-                return Response(
-                    invalid_entry,
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            article_obj = self.get_object()
-            this_tags = the_data.get("tagList", None)
-            tags_pk = []
-            if this_tags:
-                this_tags = the_data.pop("tagList")
-                tag_object = Tag()
-                for item in this_tags:
-                    the_tag = tag_object._create_tag(item)
-                    tags_pk.append(the_tag.pk)
-                the_data["tags"] = tags_pk
-
-            serialized = self.serializer_class(
-                article_obj, data=the_data, partial=True
-            )
-            serialized.is_valid(raise_exception=True)
-            self.perform_update(serialized)
-            if "activated" in the_data.keys() \
-                    and the_data["activated"] is False:
-                deleted_entry = {
-                    "detail": "This article has been deleted."
-                }
-                return Response(
-                    deleted_entry,
-                    status=status.HTTP_200_OK
-                )
-            return Response(
-                serialized.data,
-                status=status.HTTP_200_OK
-            )
-
-        not_found = {
-            "detail": "You are not the owner of the article."
-        }
-        return Response(
-            not_found,
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-
     def put(self, request, *args, **kwargs):
         '''This method method updates field of model article'''
         my_data = request.data.get('article', {})
-        return self._edit_article(request, my_data)
+        the_tags = my_data.get("tagList", None)
+        tags_pk = []
+        if the_tags:
+            the_tags = my_data.pop("tagList")
+            tag_object = Tag()
+            for item in the_tags:
+                my_tag = tag_object._create_tag(item)
+                tags_pk.append(my_tag.pk)
+            my_data["tags"] = tags_pk
+
+        return edit_article(self, request, my_data)
 
     def delete(self, request, *args, **kwargs):
         '''This method performs a soft deletion of an article.'''
         soft_delete = {"activated": False}
-        return self._edit_article(request, soft_delete)
+        return edit_article(self, request, soft_delete)
+
+
+class PublishAnArticleView(
+    mixins.UpdateModelMixin, generics.GenericAPIView
+):
+    queryset = Article.objects.all()
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ArticleJSONRenderer,)
+    serializer_class = (TheArticleSerializer)
+    lookup_field = "slug"
 
     def patch(self, request, *args, **kwargs):
         '''This method is used to publish an article.'''
@@ -182,7 +158,7 @@ class UpdateAnArticleView(mixins.UpdateModelMixin,
                 "body": new_data,
                 "published": True
             }
-            return self._edit_article(request, publish_data)
+            return edit_article(self, request, publish_data)
         no_edit = {}
         no_edit["detail"] = "Draft has no data"
         return Response(
@@ -521,7 +497,10 @@ class GetUserFavoritesView(APIView):
 
         favorite_articles = []
         for favorite in favorites_queryset:
-            article = TheArticleSerializer(favorite.article_id).data
+            article = TheArticleSerializer(
+                favorite.article_id,
+                context={"current_user": request.user}
+            ).data
             favorite_articles.append(article)
         favorites = {
             "favorites": favorite_articles

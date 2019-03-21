@@ -2,6 +2,7 @@ from django.test import TestCase
 
 from authors.apps.articles.models import Tag, Article
 from authors.apps.authentication.models import User
+from authors.apps.articles.serializers import TheArticleSerializer
 
 class ArticleModelTestCase(TestCase):
 
@@ -14,7 +15,7 @@ class ArticleModelTestCase(TestCase):
         self.article_one = Article.objects.create(
             title = "I am the OG",
             body = "This is an article by the OG",
-            author = self.user_one
+            author = self.user_one.profile
         )
 
     def test_article_creation(self):
@@ -36,7 +37,7 @@ class  TagModelTestCase(TestCase):
         self.article_one = Article.objects.create(
             title = "I am the OG",
             body = "This is an article by the OG",
-            author = self.user_one
+            author = self.user_one.profile
         )
 
     def test_tag_creation(self):

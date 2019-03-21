@@ -12,8 +12,8 @@ class  CommentActiveObjectsManagerTests(TestCase):
     def setUp(self):
         self.user1 = UserFactory.create()
         self.user2 = UserFactory.create()
-        self.article1 = ArticleFactory.create(author=self.user1)
-        self.article2 = ArticleFactory.create(author=self.user2)
+        self.article1 = ArticleFactory.create(author=self.user1.profile)
+        self.article2 = ArticleFactory.create(author=self.user2.profile)
 
     def test_fetching_only_active_comments(self):
         comment1 = ThreadedComment.objects.create(author=self.user1.profile,
