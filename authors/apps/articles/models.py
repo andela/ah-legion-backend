@@ -21,7 +21,6 @@ class Article(models.Model):
     slug = models.SlugField(max_length=170, db_index=True, unique=True)
     body = models.TextField(blank=False, null=False)
     draft = models.TextField(blank=True, null=True)
-    # [editing]True if user is currently editing the article
     editing = models.BooleanField(default=False)
     description = models.CharField(max_length=255, null=True)
     published = models.BooleanField(default=False)
@@ -30,7 +29,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Profile, related_name="articles",
         on_delete=models.CASCADE
     )
 
@@ -43,12 +42,6 @@ class Article(models.Model):
         '''Saves all the changes of model article'''
         if not self.slug:
             self.slug = generate_unique_slug(self, "title", "slug")
-
-        update_slug = generate_unique_slug(self, "title", "slug")
-        art = Article.objects.filter(slug=self.slug).first()
-        if art and art.title != self.title:
-            self.slug = update_slug
-
         super().save(*args, **kwargs)
 
     def get_reading_time(self):

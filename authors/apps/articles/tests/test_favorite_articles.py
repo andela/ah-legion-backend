@@ -45,7 +45,7 @@ class FavoriteArticleTestCase(ArticlesBaseTest):
         """Test get favorites endpoint"""
         self.client.post(self.favorite_article_url, **self.header_user1)
 
-        response = self.client.get('/api/articles/favorites/',
+        response = self.client.get('/api/articles/user/favorites/',
                                    **self.header_user1)
         self.assertEqual(len(response.data.get('favorites')), 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -418,7 +418,7 @@ Authentication required, returns the updated Article
 
 Optional fields: `title`, `description`, `body`
 
-The `slug` also gets updated when the `title` is changed
+The `slug` does not get updated when the `title` is changed
 
 ### Delete Article
 
@@ -428,7 +428,7 @@ Authentication required
 
 ### Pubish Article
 
-`PATCH /api/articles/:slug/edit`
+`PATCH /api/articles/:slug/publish`
 
 Authentication required
 

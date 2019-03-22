@@ -10,7 +10,7 @@ class CommentMethodTests(TestCase):
 
     def setUp(self):
         self.user1 = UserFactory.create()
-        self.article1 = ArticleFactory.create(author=self.user1)
+        self.article1 = ArticleFactory.create(author=self.user1.profile)
 
     def test_comment_string_representation(self):
         body = "comments and stuff "
@@ -40,7 +40,7 @@ class CommentSnapshotSignalTests(TestCase):
 
     def setUp(self):
         self.user1 = UserFactory.create()
-        self.article1 = ArticleFactory.create(author=self.user1)
+        self.article1 = ArticleFactory.create(author=self.user1.profile)
 
     def test_snapshot_is_saved_only_when_a_comment_is_edited(self):
         body = "testing comment"

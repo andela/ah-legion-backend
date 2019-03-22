@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from authors.apps.profiles.serializers import ProfileSerializer
-
+from authors.apps.profiles.models import Profile
 from .models import (Article, Favorite, Like, Snapshot,
                      ThreadedComment, Rating, Tag)
 
@@ -10,6 +10,7 @@ class TheArticleSerializer(serializers.ModelSerializer):
 
     reading_time = serializers.ReadOnlyField(source='get_reading_time')
     average_rating = serializers.ReadOnlyField(source='get_average_rating')
+    author = ProfileSerializer(read_only=True)
 
     class Meta:
         model = Article
@@ -27,8 +28,11 @@ class TheArticleSerializer(serializers.ModelSerializer):
         tags_data = None
         if 'tags' in validated_data.keys():
             tags_data = article_data.pop("tags")
-        article = Article.objects.create(**article_data)
 
+        current_user = self.context.get('current_user', None)
+        user_profile = Profile.objects.filter(user=current_user).first()
+        article_data["author"] = user_profile
+        article = Article.objects.create(**article_data)
         if tags_data:
             for item in tags_data:
                 my_tag = Tag()

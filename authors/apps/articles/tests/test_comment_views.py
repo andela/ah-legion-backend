@@ -19,7 +19,7 @@ class CommentListCreateViewTest(TestCase):
 
     def setUp(self):
         self.user1 = UserFactory.create()
-        self.article = ArticleFactory.create(author=self.user1)
+        self.article = ArticleFactory.create(author=self.user1.profile)
         self.factory = APIRequestFactory()
 
     def test_author_can_create_article_comments(self):
@@ -88,7 +88,7 @@ class CommentListCreateViewTest(TestCase):
                                                     username="bob")
         user.is_verified = True
         user.save()
-        article = ArticleFactory.create(author=user)
+        article = ArticleFactory.create(author=user.profile)
         comment = ThreadedComment.objects.create(author=user.profile,
                                                article=article)
         client = APIClient()
