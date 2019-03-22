@@ -108,8 +108,10 @@ class ThreadedComment(TimeStamped):
 
     @cached_property
     def edited(self):
-        """Return whether the comment has been edited."""
-        return self.snapshots.all().exists()
+        """Return whether the comment has been edited.
+        The first snapshot saved is of the original comment so its not counted.
+        """
+        return self.snapshots.count() > 1
 
 
 class Snapshot(models.Model):
