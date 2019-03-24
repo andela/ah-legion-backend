@@ -169,3 +169,25 @@ class BookmarkSerializer(serializers.ModelSerializer):
         model = Bookmark
         fields = ('id', 'user_id', 'article_id')
         read_only_fields = ['id']
+
+
+class PersonalArticlesSerializer(serializers.ModelSerializer):
+    """
+    separate serilizer for getting all
+    articles belonging to logged in user
+    no need of 'author' field since
+    they all belong to the currently logged in user.
+    """
+
+    reading_time = serializers.ReadOnlyField(source='get_reading_time')
+    average_rating = serializers.ReadOnlyField(source='get_average_rating')
+
+    class Meta:
+        model = Article
+        fields = [
+            'id', 'title', 'body', 'draft', 'slug',
+            'reading_time', 'average_rating', 'tags',
+            'editing', 'description', 'published', 'activated',
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ['slug']

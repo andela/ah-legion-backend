@@ -1,7 +1,7 @@
 import json
 
 from rest_framework.renderers import JSONRenderer
-from rest_framework.utils.serializer_helpers import ReturnDict
+from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
 
 from ..articles.models import Tag
 
@@ -26,6 +26,10 @@ class ArticleJSONRenderer(JSONRenderer):
             my_data = self._single_article_formatting(data)
             return json.dumps({
                 'Article': my_data
+            })
+        elif type(data) is ReturnList:
+            return json.dumps({
+                'Articles': data
             })
         else:
             # many articles

@@ -2,13 +2,17 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.serializers import ValidationError
 from rest_framework.generics import RetrieveAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from drf_yasg.utils import swagger_auto_schema
 
 from .models import Profile
+from ..authentication.models import User
+from ..articles.models import Article
+from ..articles.serializers import TheArticleSerializer
 from .renderers import ProfileJSONRenderer
+from ..articles.renderers import ArticleJSONRenderer
 from .serializers import (
     ProfileSerializer, MultipleProfileSerializer,
     FollowUnfollowSerializer, FollowerFollowingSerializer)
@@ -162,3 +166,30 @@ class FollowerFollowingAPIView(ListAPIView):
             "Following": follower_serializer.data
         }
         return Response(message, status=status.HTTP_200_OK)
+
+
+class GetArticlesByAuthor(ListAPIView):
+    """
+    get articles written by a specific author
+    since author is now linked with profiles
+    we can retrieve all published articles by a
+    specific author, no need of a new serializer here
+    """
+    permission_classes = (AllowAny,)
+    renderer_classes = (ArticleJSONRenderer,)
+    serializer_class = TheArticleSerializer
+
+    def get(self, request, username):
+        """ get all published articles by author with username username """
+        try:
+            author = User.objects.get(username=username).profile
+        except User.DoesNotExist:
+            raise ProfileDoesNotExist
+        published_articles_by_this_author = Article.objects.filter(
+            published=True, activated=True, author=author).all()
+        serializer = self.serializer_class(
+            published_articles_by_this_author,
+            many=True,
+            context={'current_user': request.user}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -14,7 +14,8 @@ from .serializers import (ArticleCommentInputSerializer,
                           TheArticleSerializer,
                           ThreadedCommentOutputSerializer,
                           FavoriteSerializer, RatingSerializer,
-                          ArticleRatingSerializer, BookmarkSerializer)
+                          ArticleRatingSerializer, BookmarkSerializer,
+                          PersonalArticlesSerializer)
 from .models import (Article, Bookmark, Like,
                      ThreadedComment, Favorite, Rating, Tag)
 from authors.apps.core.views import BaseManageView
@@ -50,6 +51,22 @@ class CreateArticleView(mixins.CreateModelMixin,
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class GetAllArticlesForCurrentUser(generics.ListAPIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ArticleJSONRenderer,)
+    serializer_class = PersonalArticlesSerializer
+
+    def get(self, request):
+        """ get method for seeing all articles belonging to logged in user """
+        user = request.user
+        all_user_articles = user.profile.articles.all()
+        serializer = self.serializer_class(
+            all_user_articles, many=True
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class GetArticlesView(mixins.ListModelMixin, generics.GenericAPIView):
