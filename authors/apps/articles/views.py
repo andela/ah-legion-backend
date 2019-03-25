@@ -680,7 +680,8 @@ class GetUserBookmarksView(APIView):
         bookmarked_articles = []
         for bookmark in bookmarks_queryset:
             article = TheArticleSerializer(bookmark.article_id, context={
-                                           "current_user": request.user}).data
+                                           "current_user": request.user,
+                                           "request": request}).data
             bookmarked_articles.append(article)
         bookmarks = {
             "bookmarks": bookmarked_articles
