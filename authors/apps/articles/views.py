@@ -43,7 +43,9 @@ class CreateArticleView(mixins.CreateModelMixin,
 
         # Decode token
         serializer = TheArticleSerializer(
-            data=payload, context={"current_user": request.user}
+            data=payload, context={
+                "current_user": request.user,
+                "request": request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -77,7 +79,7 @@ class GetArticlesView(mixins.ListModelMixin, generics.GenericAPIView):
 
         serializer = self.serializer_class(
             page, many=True,
-            context={"current_user": request.user}
+            context={"current_user": request.user, "request": request}
         )
         return paginator.get_paginated_response(serializer.data)
 
@@ -98,7 +100,9 @@ class GetAnArticleView(mixins.RetrieveModelMixin,
 
         if found_article is not None:
             serialized = self.serializer_class(
-                found_article, context={"current_user": request.user}
+                found_article, context={
+                    "current_user": request.user,
+                    "request": request}
             )
             return Response(
                 serialized.data,
@@ -499,7 +503,7 @@ class GetUserFavoritesView(APIView):
         for favorite in favorites_queryset:
             article = TheArticleSerializer(
                 favorite.article_id,
-                context={"current_user": request.user}
+                context={"current_user": request.user, "request": request}
             ).data
             favorite_articles.append(article)
         favorites = {
@@ -533,7 +537,7 @@ class RatingView(APIView):
             if user_id == request.user.id:
 
                 return Response({"message":
-                                "You cannot rate your own article."},
+                                 "You cannot rate your own article."},
                                 status=status.HTTP_403_FORBIDDEN
                                 )
             else:
@@ -548,7 +552,7 @@ class RatingView(APIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response({"message":
-                            "Article rated."},
+                             "Article rated."},
                             status=status.HTTP_201_CREATED)
 
         except Article.DoesNotExist:

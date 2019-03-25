@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from urllib import parse
 
 import jwt
 
@@ -8,6 +9,7 @@ from rest_framework import exceptions
 
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 
 class TokenHandler:
@@ -68,3 +70,26 @@ class TokenHandler:
         msg.content_subtype = 'html'
         msg.send()
 
+
+def share_link_generator(instance, request):
+    """
+    This method takes an article instance and a request to create a
+    sharable link to the article.
+    """
+    links = {}
+
+    article_title = instance.title
+    article_link = request.build_absolute_uri(
+        reverse('articles:get_an_article', kwargs={'slug': instance.slug}))
+
+    valid_article_link = parse.quote(article_link)
+    valid_article_title = parse.quote(article_title)
+
+    links['email'] = 'mailto:?&subject=' + valid_article_title + '&body='\
+        + valid_article_title + '%0A%0A' + valid_article_link
+    links['facebook'] = 'https://www.facebook.com/sharer/sharer.php?u='\
+                        + valid_article_link
+    links['twitter'] = 'https://twitter.com/home?status=' + valid_article_link
+    links['google'] = 'https://plus.google.com/share?url=' + valid_article_link
+
+    return links
