@@ -4,6 +4,7 @@ from .views import (LoginAPIView, RegistrationAPIView,
                     UserRetrieveUpdateAPIView, SocialAuthenticationView,
                     EmailVerificationView, CreateEmailVerificationTokenAPIView,
                     PasswordResetView)
+from ..articles.views import GetAllArticlesForCurrentUser
 
 
 app_name = 'authentication'
@@ -20,5 +21,7 @@ urlpatterns = [
     path('token/', CreateEmailVerificationTokenAPIView.as_view(),
          name='new verification token'),
     path('password-reset/', PasswordResetView.as_view(),
-         name='password-reset')
+         name='password-reset'),
+    path('articles/', GetAllArticlesForCurrentUser.as_view(),
+         name='personal-articles'),
 ]
