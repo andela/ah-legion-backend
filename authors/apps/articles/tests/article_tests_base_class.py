@@ -46,3 +46,4 @@ class ArticlesBaseTest(APITestCase):
         self.non_existent_article = '/api/articles/hi/rate/'
         self.get_non_existent_article = '/api/articles/hi/ratings/'
         self.article_rating = '/api/articles/'
+        self.bookmark_article_url = '/api/articles/{}/bookmark/'.format(self.slug)

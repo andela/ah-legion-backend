@@ -232,3 +232,16 @@ class Tag(models.Model):
             # Add the tag to the article instance.
             instance.tags.add(the_tag)
         return True
+
+
+class Bookmark(models.Model):
+    """Stores article bookmarks"""
+    user_id = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='bookmarks')
+    article_id = models.ForeignKey(
+        Article, on_delete=models.CASCADE, related_name='bookmarks')
+
+    class Meta:
+        verbose_name = _("Article bookmark")
+        verbose_name_plural = _("Article bookmarks")

@@ -1,10 +1,9 @@
-from rest_framework import serializers
-
 from authors.apps.profiles.serializers import ProfileSerializer
 from authors.apps.profiles.models import Profile
 from .models import (Article, Favorite, Like, Snapshot,
-                     ThreadedComment, Rating, Tag)
+                     ThreadedComment, Rating, Tag, Bookmark)
 from authors.apps.core.utils import share_link_generator
+from rest_framework import serializers
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -165,3 +164,13 @@ class ArticleRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rating
         fields = ['value', 'review', 'username', 'image']
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    """
+    Serializers for bookmarks
+    """
+    class Meta():
+        model = Bookmark
+        fields = ('id', 'user_id', 'article_id')
+        read_only_fields = ['id']
