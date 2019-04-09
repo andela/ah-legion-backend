@@ -567,7 +567,7 @@ class RatingView(APIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response({"message":
-                             "Article rated."},
+                             "You have rated this article: " + slug},
                             status=status.HTTP_201_CREATED)
 
         except Article.DoesNotExist:
