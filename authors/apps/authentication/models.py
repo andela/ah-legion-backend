@@ -136,7 +136,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         We generate JWT token and add the user id, username and expiration
         as an integer.
         """
-        token_expiry = datetime.now() + timedelta(hours=2)
+        token_expiry = datetime.now() + timedelta(days=365)
 
         token = jwt.encode({
             'id': self.pk,
