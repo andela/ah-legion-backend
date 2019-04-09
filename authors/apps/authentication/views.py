@@ -22,7 +22,7 @@ from .serializers import (LoginSerializer, RegistrationSerializer,
                           PasswordResetSerializer, PasswordResetTokenSerializer)
 from .utils import validate_image
 from authors.apps.core.utils import TokenHandler
-
+from threading import Thread
 from .models import User, PasswordResetToken
 
 
@@ -60,10 +60,16 @@ class RegistrationAPIView(APIView):
         # https://stackoverflow.com/questions/3005080/how-to-send-html-email-with-django-with-dynamic-content-in-it
         html_message = render_to_string(template_name, context)
         text_message = strip_tags(html_message)
-        mail.send_mail(
-            'Please verify your email',
-            text_message, settings.FROM_EMAIL,
-            [user_email, ], html_message=html_message)
+        thread = Thread(
+            target=mail.send_mail, args=[
+                'Please verify your email',
+                text_message,
+                settings.FROM_EMAIL,
+                [user_email, ],
+                html_message]
+        )
+        thread.setDaemon(True)
+        thread.start()
 
         message = {
             'message': 'Successfully created your account. Please proceed to your email ' + # noqa
@@ -278,10 +284,16 @@ class CreateEmailVerificationTokenAPIView(APIView):
                    'token': token, 'domain': domain}
         html_message = render_to_string(template_name, context)
         text_message = strip_tags(html_message)
-        mail.send_mail(
-            'Please verify your email',
-            text_message, settings.FROM_EMAIL,
-            [user_email, ], html_message=html_message)
+        thread = Thread(
+            target=mail.send_mail, args=[
+                'Please verify your email',
+                text_message,
+                settings.FROM_EMAIL,
+                [user_email, ],
+                html_message]
+        )
+        thread.setDaemon(True)
+        thread.start()
 
         message = {'message': 'New verification token created. Please proceed to your email ' + # noqa
                    user_email + ' to verify your account.'}
