@@ -37,7 +37,7 @@ def edit_article(instance, request, the_data, tag_instance=None):
         article_obj = instance.get_object()
         serialized = instance.serializer_class(
             article_obj, data=the_data, partial=True,
-            context={"current_user": request.user}
+            context={"current_user": request.user, "request": request}
         )
         serialized.is_valid(raise_exception=True)
         instance.perform_update(serialized)

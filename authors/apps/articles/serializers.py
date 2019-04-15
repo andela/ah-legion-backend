@@ -2,6 +2,7 @@ from authors.apps.profiles.serializers import ProfileSerializer
 from authors.apps.profiles.models import Profile
 from .models import (Article, Favorite, Like, Snapshot,
                      ThreadedComment, Rating, Tag, Bookmark)
+from authors.apps.core.utils import share_link_generator
 from rest_framework import serializers
 
 
@@ -10,6 +11,7 @@ class TheArticleSerializer(serializers.ModelSerializer):
     reading_time = serializers.ReadOnlyField(source='get_reading_time')
     average_rating = serializers.ReadOnlyField(source='get_average_rating')
     author = ProfileSerializer(read_only=True)
+    share_links = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -17,7 +19,7 @@ class TheArticleSerializer(serializers.ModelSerializer):
             'id', 'title', 'body', 'draft', 'slug',
             'reading_time', 'average_rating', 'tags',
             'editing', 'description', 'published', 'activated',
-            "created_at", "updated_at", 'author'
+            "created_at", "updated_at", 'author', 'share_links',
         ]
         read_only_fields = ['slug']
 
@@ -66,6 +68,9 @@ class TheArticleSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+    def get_share_links(self, instance):
+        return share_link_generator(instance, self.context['request'])
 
 
 class LikesSerializer(serializers.ModelSerializer):
