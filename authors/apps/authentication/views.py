@@ -100,8 +100,11 @@ class LoginAPIView(APIView):
         # handles everything we need.
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        username = serializer.data.get('username')
+        instance = User.objects.get(username=username)
+        user_serializer = UserSerializer(
+            instance, context={'current_user': request.user})
+        return Response(user_serializer.data, status=status.HTTP_200_OK)
 
 
 class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
