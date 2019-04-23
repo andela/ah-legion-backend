@@ -88,10 +88,15 @@ class FollowUnfollowAPIView(APIView):
         request.user.profile.followings.add(to_be_followed)
         request.user.save()
 
+        profile_serializer = ProfileSerializer(
+            to_be_followed, context={'current_user': request.user})
+
         serializer = FollowUnfollowSerializer(request.user.profile)
         message = {
             "message": f"You are now following {username}",
-            "user": serializer.data
+            "current_user": serializer.data,
+            "user_of_interest": profile_serializer.data
+
         }
         return Response(message, status=status.HTTP_200_OK)
 
@@ -120,10 +125,14 @@ class FollowUnfollowAPIView(APIView):
         request.user.profile.followings.remove(to_be_unfollowed)
         request.user.save()
 
+        profile_serializer = ProfileSerializer(
+            to_be_unfollowed, context={'current_user': request.user})
+
         serializer = FollowUnfollowSerializer(request.user.profile)
         message = {
             "message": f"You just unfollowed {username}",
-            "user": serializer.data
+            "curent_user": serializer.data,
+            "user_of_interest": profile_serializer.data,
         }
         return Response(message, status=status.HTTP_200_OK)
 
