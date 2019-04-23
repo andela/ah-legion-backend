@@ -199,6 +199,6 @@ class GetArticlesByAuthor(ListAPIView):
         serializer = self.serializer_class(
             published_articles_by_this_author,
             many=True,
-            context={'current_user': request.user}
+            context={'current_user': request.user, 'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
