@@ -22,6 +22,7 @@ class ArticleViewsTestCase(TestCase):
         self.user2 = User.objects.create_user(
             username='user2', email='user2@mail.com', password='user2user2')
         self.user2.is_verified = True
+        self.user2.is_staff = True
         self.user2.save()
 
         self.user1_credentials = {
@@ -46,6 +47,10 @@ class ArticleViewsTestCase(TestCase):
                 "tagList": ["dragons", "training"],
  
             }
+        }
+
+        self.report_sample = {
+            "message":"this article was so biased, it does not respect the muslim culture"
         }
 
         client = APIClient()
@@ -295,4 +300,52 @@ class ArticleViewsTestCase(TestCase):
         response = client.get(my_url, **self.header_user1,)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_report_an_article(self):
+        # Create article with user1
+        client = APIClient()
+        respo = client.post(reverse('articles:create_article'),
+                            self.sample_input, **self.header_user1, format='json')
+        self.assertEqual(respo.status_code, status.HTTP_201_CREATED)
+
+        # Publish article of user1
+        my_url = '/api/articles/{}/publish/'.format(respo.data['slug'])
+        respo1 = client.patch(
+            my_url,
+            **self.header_user1,
+            format='json'
+        )
+        self.assertEqual(respo1.status_code, status.HTTP_200_OK)
+        my_url = '/api/articles/{}/report/'.format(respo.data['slug'])
+        response = client.post(reverse('articles:report-article',args=[respo.data['slug']]),
+                               self.report_sample, **self.header_user1, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_report_a_non_existent_article(self):
+        # Create article with user1
+        client = APIClient()
+        my_url = '/api/articles/{}/report/'.format("miaomoioaa")
+        response = client.post(my_url, self.report_sample, **self.header_user1, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.json()['report_details']["message"],"you cannot report this article, its does not exist")
     
+    def test_get_all_reports(self):
+        """ test if superuser can get all article reports """
+        client = APIClient()
+        response = client.get(reverse(
+            'articles:get-all-reports'),**self.header_user2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_get_all_reports_made_by_a_user(self):
+        """ test if a user can get all article reports he made """
+        client = APIClient()
+        response = client.get(reverse(
+            'authentication:user-article-reports'),**self.header_user2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_all_reports_by_non_superuser(self):
+        """ test if a non_superuser can get all article reports """
+        client = APIClient()
+        response = client.get(reverse(
+            'articles:get-all-reports'),**self.header_user1)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+

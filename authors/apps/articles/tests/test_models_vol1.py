@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from authors.apps.articles.models import Tag, Article
+from authors.apps.articles.models import Tag, Article, ReportArticle
 from authors.apps.authentication.models import User
 from authors.apps.articles.serializers import TheArticleSerializer
 
@@ -17,6 +17,12 @@ class ArticleModelTestCase(TestCase):
             body = "This is an article by the OG",
             author = self.user_one.profile
         )
+        self.report1 = ReportArticle.objects.create(
+            message = "this is the worst article I have ever read",
+            article = self.article_one,
+            reporter = self.user_one
+        )
+
 
     def test_article_creation(self):
         
@@ -24,6 +30,13 @@ class ArticleModelTestCase(TestCase):
             self.article_one.__str__(),
             "I am the OG"
         )
+    def test_report_string_representation(self):
+        """ test for the value returned by __str__ """
+        self.assertEqual(str(self.report1), "this is the worst article I have ever read")
+
+    def test_get_username(self):
+        username = self.report1.get_username()
+        self.assertEqual(username, "Jake")
 
 
 class  TagModelTestCase(TestCase):
@@ -61,5 +74,3 @@ class  TagModelTestCase(TestCase):
         self.assertFalse(remove_tag)
         remove_tag = a_tag._remove_tags_without_articles("Etomovich")
         self.assertFalse(remove_tag)
-
-

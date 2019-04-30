@@ -50,3 +50,15 @@ class CommentJSONRenderer(JSONRenderer):
             return json.dumps({'Comment': data})
 
         return json.dumps({'Comments': data})
+
+
+class ReportJSONRenderer(JSONRenderer):
+    charset = 'utf-8'
+
+    def render(self, data, media_type=None, renderer_context=None):
+
+        # Finally, we can render our data under the "profile" namespace.
+        return json.dumps({
+            'report_details': data
+
+        })

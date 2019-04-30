@@ -1,9 +1,10 @@
 from authors.apps.profiles.serializers import ProfileSerializer
 from authors.apps.profiles.models import Profile
-from .models import (Article, Favorite, Like, Snapshot,
-                     ThreadedComment, Rating, Tag, Bookmark)
 from authors.apps.core.utils import share_link_generator
 from rest_framework import serializers
+from .models import (Article, Favorite, Like, Snapshot,
+                     ThreadedComment, Rating, Tag,
+                     Bookmark, ReportArticle)
 
 
 class TheArticleSerializer(serializers.ModelSerializer):
@@ -196,3 +197,11 @@ class PersonalArticlesSerializer(serializers.ModelSerializer):
             "created_at", "updated_at"
         ]
         read_only_fields = ['slug']
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    """ serilaizer report instance data """
+
+    class Meta:
+        model = ReportArticle
+        fields = ['id', 'article', 'message', 'reporter']
