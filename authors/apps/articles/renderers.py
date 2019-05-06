@@ -62,3 +62,15 @@ class ReportJSONRenderer(JSONRenderer):
             'report_details': data
 
         })
+
+
+class SearchJSONRenderer(JSONRenderer):
+    '''Returns results from a search of articles'''
+    charset = 'utf-8'
+    article_formatting = ArticleJSONRenderer()
+
+    def render(self, data, media_type=None, renderer_context=None):
+        if "articles" in data.keys():
+            for item in data["articles"]:
+                item = self.article_formatting._single_article_formatting(item)
+        return json.dumps(data)
