@@ -7,7 +7,7 @@ from rest_framework.views import APIView, status
 
 from .permissions import CanCreateComment, CanEditComment
 from .renderers import (ArticleJSONRenderer, CommentJSONRenderer,
-                        ReportJSONRenderer)
+                        ReportJSONRenderer, SearchJSONRenderer)
 from .serializers import (ArticleCommentInputSerializer,
                           CommentCommentInputSerializer,
                           EmbededCommentOutputSerializer,
@@ -772,3 +772,81 @@ class AllUserArticleReports(generics.ListAPIView):
         serializer = self.serializer_class(
             the_user_reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SearchForArticles(generics.ListAPIView):
+    """This view implements search functionality and custom filtering"""
+    serializer_class = TheArticleSerializer
+    permission_classes = (AllowAny,)
+    renderer_classes = (SearchJSONRenderer,)
+
+    def put(self, request, *args, **kwargs):
+        '''Searches for the search_string given in the following areas
+        [tags, author, title, description,body] if either is
+        supplied else it returns all articles given the search_string'''
+        search_string = request.data.get('search_string', '')
+        my_query_params = request.query_params.get('query', None)
+        query_fields = []
+        payload = {
+            "article_author_hits": 0,
+            "article_body_hits": 0,
+            "article_tag_hits": 0,
+            "article_description_hits": 0,
+            "article_title_hits": 0,
+            "total_articles": 0,
+            "articles": []
+        }
+        search_fields = []
+        if (my_query_params):
+            search_fields = my_query_params.split(",")
+        if not search_string:
+            payload = {
+                "message": "Please enter a search string."
+            }
+            return Response(payload, status=status.HTTP_400_BAD_REQUEST)
+
+        if('title' in search_fields) or (not search_fields):
+            query = Article.objects.filter(title__icontains=search_string)
+            payload["article_title_hits"] = len(query)
+            query_fields = list(set(query_fields + list(query)))
+        if('body' in search_fields) or (not search_fields):
+            query = Article.objects.filter(body__icontains=search_string)
+            payload["article_body_hits"] = len(query)
+            query_fields = list(set(query_fields + list(query)))
+        if('author' in search_fields) or (not search_fields):
+            query = Article.objects.filter(
+                author__user__username__icontains=search_string
+            )
+            payload["article_author_hits"] = len(query)
+            query_fields = list(set(query_fields + list(query)))
+        if('description' in search_fields) or (not search_fields):
+            query = Article.objects.filter(
+                description__icontains=search_string
+            )
+            payload["article_description_hits"] = len(query)
+            query_fields = list(set(query_fields + list(query)))
+
+        matching_tags = []
+        if('tags' in search_fields) or (not search_fields):
+            matching_tags = list(Tag.objects.filter(
+                tag__icontains=search_string
+            ))
+        if matching_tags:
+            count = 0
+            for item in matching_tags:
+                query = Article.objects.filter(
+                    tags__id__icontains=item.id
+                )
+                query_fields = list(set(query_fields + list(query)))
+                count += len(query)
+            payload["article_tag_hits"] = count
+
+        serializer = self.serializer_class(
+            query_fields, many=True,
+            context={"current_user": request.user, "request": request}
+        )
+        payload["total_articles"] = len(query_fields)
+        payload["articles"] = serializer.data
+
+        return Response(payload, status=status.HTTP_200_OK)
+
