@@ -28,6 +28,8 @@ urlpatterns = [
          name="comment"),
     path('<slug:slug>/likes/',
          views.GetArticleLikesView.as_view(), name="get_likes"),
+    path('<slug:slug>/all-likes/',
+         views.GetAllLikesView.as_view(), name="get_all_likes"),
     path('<slug:slug>/favorite/',
          views.FavoriteView.as_view(), name="favorite"),
 

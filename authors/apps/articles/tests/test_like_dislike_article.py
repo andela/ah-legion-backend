@@ -29,7 +29,9 @@ class LikeDislikeArticleTestCase(ArticlesBaseTest):
         """Test like"""
         response = self.client.get(self.like_article_url,
                                    **self.header_user1)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        detail = "undefined"
+        self.assertEqual(response.data.get("is_like"), detail)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.client.post(self.like_article_url,
                          like_data, **self.header_user1, format='json')
@@ -41,6 +43,18 @@ class LikeDislikeArticleTestCase(ArticlesBaseTest):
                                    **self.header_user1)
         detail = "This article has not been found."
         self.assertEqual(response.data.get('detail'), detail)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_all_likes(self):
+        """Test get all likes"""
+        self.client.post(self.like_article_url,
+                         like_data, **self.header_user1, format='json')
+        response1 = self.client.get(
+            self.all_article_likes_url, **self.header_user1)
+        self.assertEqual(response1.status_code, status.HTTP_200_OK)
+        # Test invalid slug
+        response = self.client.get('/api/articles/invalid-slug/all-likes/',
+                                   **self.header_user1)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_like(self):
