@@ -242,14 +242,36 @@ class GetLikeView(generics.RetrieveAPIView):
             user_id=request.user.pk, article_id=article.id).first()
         if like is None:
             no_like = {
-                "detail": "This user has neither liked \
-                    nor disliked the article."
+                "is_like": "undefined"
             }
-            return Response(data=no_like, status=status.HTTP_404_NOT_FOUND)
+            return Response(data=no_like, status=status.HTTP_200_OK)
         like_data = {"id": like.id,
                      "article_id": like.article_id.id,
-                     "user_id": like.user_id.id
+                     "user_id": like.user_id.id,
+                     "is_like": like.is_like
                      }
+        return Response(data=like_data, status=status.HTTP_200_OK)
+
+
+class GetAllLikesView(generics.RetrieveAPIView):
+    """Fetch like or dislike for an article"""
+    permission_classes = (AllowAny,)
+    queryset = Like.objects.all()
+
+    def get(self, request, slug):
+        article = Article.objects.filter(
+            slug=slug, published=True, activated=True).first()
+        if article is None:
+            not_found = {
+                "detail": "This article has not been found."
+            }
+            return Response(data=not_found, status=status.HTTP_404_NOT_FOUND)
+        likes = Like.objects.filter(article_id=article.id, is_like=True)
+        dislikes = Like.objects.filter(article_id=article.id, is_like=False)
+        like_data = {
+            "total_likes": len(likes),
+            "total_dislikes": len(dislikes)
+        }
         return Response(data=like_data, status=status.HTTP_200_OK)
 
 
@@ -849,4 +871,3 @@ class SearchForArticles(generics.ListAPIView):
         payload["articles"] = serializer.data
 
         return Response(payload, status=status.HTTP_200_OK)
-
