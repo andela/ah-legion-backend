@@ -365,57 +365,45 @@ class ArticleViewsTestCase(TestCase):
         )
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
 
-        # Search for an article
-        test_data = {
-            "search_string": "o"
-        }
-        response = client.put(reverse('articles:search-article'),
-                               test_data, **self.header_user1, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = client.put(reverse('articles:search-article'),
-                               **self.header_user1, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        my_url = '/api/articles/user/search/?query=tags,author,title,description,body'
-        respo1 = client.put(
+        my_url = '/api/articles/author/search/?query=o'
+        respo1 = client.get(
             my_url,
-            test_data,
+            **self.header_user1,
             format='json',
         )
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
-        my_url = '/api/articles/user/search/?query=tags'
-        respo1 = client.put(
+        my_url = '/api/articles/title/search/?query=o'
+        respo1 = client.get(
             my_url,
-            test_data,
+            **self.header_user1,
             format='json',
         )
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
-        my_url = '/api/articles/user/search/?query=author'
-        respo1 = client.put(
+        my_url = '/api/articles/body/search/?query=o'
+        respo1 = client.get(
             my_url,
-            test_data,
+            **self.header_user1,
             format='json',
         )
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
-        my_url = '/api/articles/user/search/?query=title'
-        respo1 = client.put(
+        my_url = '/api/articles/tags/search/?query=o'
+        respo1 = client.get(
             my_url,
-            test_data,
+            **self.header_user1,
             format='json',
         )
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
-        my_url = '/api/articles/user/search/?query=description'
-        respo1 = client.put(
+        my_url = '/api/articles/description/search/?query=o'
+        respo1 = client.get(
             my_url,
-            test_data,
+            **self.header_user1,
             format='json',
         )
         self.assertEqual(respo1.status_code, status.HTTP_200_OK)
-        my_url = '/api/articles/user/search/?query=body'
-        respo1 = client.put(
+        my_url = '/api/articles/description/search/?query='
+        respo1 = client.get(
             my_url,
-            test_data,
+            **self.header_user1,
             format='json',
         )
-        self.assertEqual(respo1.status_code, status.HTTP_200_OK)
-
+        self.assertEqual(respo1.status_code, status.HTTP_400_BAD_REQUEST)

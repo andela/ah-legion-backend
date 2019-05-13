@@ -70,7 +70,7 @@ class SearchJSONRenderer(JSONRenderer):
     article_formatting = ArticleJSONRenderer()
 
     def render(self, data, media_type=None, renderer_context=None):
-        if "articles" in data.keys():
-            for item in data["articles"]:
+        if "results" in data.keys():
+            for item in data["results"]:
                 item = self.article_formatting._single_article_formatting(item)
         return json.dumps(data)
