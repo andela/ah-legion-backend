@@ -45,6 +45,6 @@ urlpatterns = [
          views.GetUserBookmarksView.as_view(), name="get_bookmarks"),
     path('<slug:slug>/report/',
          views.ReportAnArticle.as_view(), name="report-article"),
-    path('user/search/',
+    path('<slug:slug>/search/',
          views.SearchForArticles.as_view(), name="search-article"),
 ]
