@@ -56,3 +56,21 @@ class CommentSnapshotSignalTests(TestCase):
         self.assertEqual(snapshots.first().body, comment.body)
         same_comment = ThreadedComment.objects.get(id = comment.id)
         self.assertTrue(same_comment.edited)
+
+
+class ArticleHighlightComment(TestCase):
+
+    def setUp(self):
+        self.user1 = UserFactory.create()
+        self.article = ArticleFactory.create(author=self.user1)
+
+    def test_commenting_on_article_with_text_hightlight(self):
+        body = "I dont think so"
+        comment = ThreadedComment.objects.create(
+            author=self.user1.profile, article=self.article, body=body)
+        body2 = "I dont think so"
+        self.assertFalse(comment.is_article_highlighted)
+        comment2 = ThreadedComment.objects.create(author=self.user1.profile,
+                                                  article=self.article, body=body2,
+                                                  highlight="blah blah text")
+        self.assertTrue(comment2.is_article_highlighted)

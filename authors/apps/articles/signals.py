@@ -11,5 +11,6 @@ def take_comment_snapshot_handler(sender, instance, created, **kwargs):
     """
     if created:
         return
-    snapshot = Snapshot.objects.create(comment=instance, body=instance.body)
+    snapshot = Snapshot.objects.create(comment=instance, body=instance.body,
+                                       highlight=instance.highlight)
     snapshot.save()

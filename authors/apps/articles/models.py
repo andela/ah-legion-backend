@@ -80,6 +80,7 @@ class ThreadedComment(TimeStamped):
                                 on_delete=models.CASCADE)
     body = models.TextField(_("Body"))
     is_active = models.BooleanField(default=True)
+    highlight = models.TextField(_("Article Highlight"), blank=True)
 
     objects = models.Manager()
     active_objects = managers.CommentQuerySet.as_manager()
@@ -111,6 +112,13 @@ class ThreadedComment(TimeStamped):
         """Return whether the comment has been edited."""
         return self.snapshots.all().exists()
 
+    @property
+    def is_article_highlighted(self):
+        """Return whether an article has been highlighted in this comment."""
+        if self.highlight:
+            return True
+        return False
+
 
 class Snapshot(models.Model):
     """Model to take snapshots of comments everytime they are edited."""
@@ -118,6 +126,7 @@ class Snapshot(models.Model):
     comment = models.ForeignKey('ThreadedComment', related_name='snapshots',
                                 on_delete=models.CASCADE)
     body = models.TextField(_("Body"))
+    highlight = models.TextField(_("Highlight"), null=True, blank=True)
 
     class Meta:
         ordering = ('-timestamp',)

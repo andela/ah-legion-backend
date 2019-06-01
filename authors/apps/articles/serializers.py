@@ -86,9 +86,11 @@ class LikesSerializer(serializers.ModelSerializer):
 
 class ArticleCommentInputSerializer(serializers.ModelSerializer):
     """Seriliazes input data and creates a new article comment."""
+    highlight = serializers.CharField(min_length=1, required=False)
+
     class Meta:
         model = ThreadedComment
-        fields = ('article', 'author', 'body')
+        fields = ('article', 'author', 'body', "highlight")
         extra_kwargs = {'article': {'required': True}}
 
 
@@ -104,18 +106,21 @@ class SnapshotSerializer(serializers.ModelSerializer):
     """Serializer for displaying comment snapshots."""
     class Meta:
         model = Snapshot
-        fields = ('id', 'body', 'timestamp')
+        fields = ('id', 'highlight', 'body', 'timestamp')
 
 
 class EmbededCommentOutputSerializer(serializers.ModelSerializer):
     """Seriliazes comment and gives output data."""
     author = ProfileSerializer()
     edit_history = SnapshotSerializer(many=True, source='snapshots')
+    is_highlight_comment = serializers.BooleanField(
+        source="is_article_highlighted")
 
     class Meta:
         model = ThreadedComment
-        fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
-                  'edit_history')
+        fields = ('id', 'created_at', 'updated_at', 'edited',
+                  'is_highlight_comment', 'highlight', 'body',
+                  'author', 'edit_history')
 
 
 class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
@@ -123,10 +128,13 @@ class ThreadedCommentOutputSerializer(serializers.ModelSerializer):
     author = ProfileSerializer()
     comments = EmbededCommentOutputSerializer(many=True)
     edit_history = SnapshotSerializer(many=True, source='snapshots')
+    is_highlight_comment = serializers.BooleanField(
+        source="is_article_highlighted")
 
     class Meta:
         model = ThreadedComment
-        fields = ('id', 'created_at', 'updated_at', 'edited', 'body', 'author',
+        fields = ('id', 'created_at', 'updated_at', 'edited', 'body',
+                  'is_highlight_comment', 'highlight', 'author',
                   'edit_history', 'comments')
 
 
